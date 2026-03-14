@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: showingflow-api
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/showingflow
+    username: postgres
+    password: postgres
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

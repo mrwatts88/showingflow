@@ -8,8 +8,6 @@ Current checkpoint: complete the first vertical API slice for `brokerages` to a 
 
 - Add unit tests for `BrokerageServiceImpl`, including create, get-by-id, list ordering, and not-found behavior.
 - Add controller tests for `BrokerageController`, covering happy paths, request validation failures, and `404` responses.
-- Add integration tests that boot the application against PostgreSQL, apply Flyway migrations, and verify the full request-to-database flow.
-- Standardize error responses so validation errors, malformed JSON, not-found cases, and unexpected failures share one consistent contract.
 - Decide whether API errors should use plain `ProblemDetail` only or a custom wrapper with stable fields for clients and observability.
 - Add request/response examples and endpoint expectations to project docs for the `brokerages` slice.
 - Add API logging and request correlation conventions before more endpoints are introduced.

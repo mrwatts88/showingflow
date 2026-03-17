@@ -13,6 +13,9 @@ This is not yet a scalable system in the operational sense, but the project has 
 - Monorepo structure is in place for backend services, frontend, infrastructure, and docs.
 - Root documentation defines the intended target architecture: Spring Boot API, worker service, frontend, AWS infrastructure, CI/CD, and observability.
 - Local PostgreSQL development is configured through Docker Compose.
+- The local runtime now supports both:
+  - host-run API with PostgreSQL in Docker
+  - full API + PostgreSQL execution in Docker Compose
 
 ### Main API Service
 
@@ -29,6 +32,8 @@ The `services/showingflow-api` service has a credible production baseline for an
   - PostgreSQL driver
   - Actuator
   - Lombok
+- Multi-stage Docker image build via `Dockerfile`
+- Environment-variable-driven datasource configuration with local defaults
 
 ### Database and Schema Management
 
@@ -105,7 +110,6 @@ Not yet implemented:
 - additional domain slices such as users, listings, showing slots, and showing requests
 - worker service behavior and event-driven workflows
 - frontend application work
-- containerization of services
 - CI/CD pipelines
 - image publishing to ECR
 - Kubernetes deployment manifests/charts
@@ -124,5 +128,6 @@ The important thing is not that there is a lot of code; it is that the existing 
 - the first API slice is implemented with production-credible boundaries
 - the database lifecycle is disciplined
 - the test strategy has started with a realistic integration path instead of toy tests
+- the service can now run in a containerized local stack, which is the right bridge toward delivery work
 
-The next major step should move outward from application code and toward delivery and operations: containerization, build pipeline automation, artifact publishing, and eventually deployment and observability. That is more aligned with the stated purpose of the project than continuing to elaborate service-layer CRUD code.
+The next major step should continue moving outward from application code and toward delivery and operations: build pipeline automation, artifact publishing, and eventually deployment and observability. Another valid option is to add one more domain slice only if the goal is to further prove the established backend pattern before investing in CI/CD.

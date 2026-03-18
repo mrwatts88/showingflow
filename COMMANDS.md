@@ -207,6 +207,12 @@ Destroy the ECR repository:
 terraform destroy
 ```
 
+Apply the GitHub Actions OIDC provider and ECR push role:
+
+```bash
+terraform apply
+```
+
 ## Amazon ECR
 
 Authenticate Docker to ECR:
@@ -252,3 +258,15 @@ Describe images in the ECR repository:
 ```bash
 aws ecr describe-images --repository-name showingflow-api --region us-east-2
 ```
+
+## GitHub Actions AWS Auth
+
+Terraform now defines:
+
+- a GitHub Actions OIDC provider in AWS
+- an IAM role named `github-actions-showingflow-ecr-push`
+
+The role is intended for:
+
+- repository: `mrwatts88/showingflow`
+- branch: `main`

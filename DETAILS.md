@@ -52,6 +52,7 @@ The infrastructure side has also now started in a minimal way:
 - the first Terraform-managed AWS resource is an ECR repository for the API image
 - the ECR repository has been created in AWS
 - a manual Docker login, tag, and push flow to ECR has been proven
+- Terraform now also defines the GitHub Actions OIDC provider and an IAM role for CI-based ECR pushes
 
 This is intentionally small, but it matters because it starts the path from "local Docker image" to "publishable deployment artifact."
 
@@ -166,6 +167,13 @@ The next step is not to keep doing this manually forever. The next step is to au
 - image tags based on the Git commit SHA
 - optionally `latest` for a simple moving tag on the main branch
 
+The AWS-side trust model for that is now defined in Terraform:
+
+- AWS trusts GitHub's OIDC provider
+- only this repository is trusted
+- the initial trust policy is restricted to the `main` branch
+- the IAM role permissions are limited to pushing images to the `showingflow-api` ECR repository
+
 ## Testing Posture
 
 The project already has an important high-value test path.
@@ -193,7 +201,7 @@ Still missing:
 - the worker service behavior
 - frontend implementation
 - broader CI/CD pipeline beyond the initial API test-and-build workflow
-- automated image publishing from CI
+- GitHub Actions workflow steps that assume the AWS role and push images to ECR
 - cloud deployment
 - broader infrastructure as code beyond the first ECR slice
 - tracing, logging conventions, and broader observability

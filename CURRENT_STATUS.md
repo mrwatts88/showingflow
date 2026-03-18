@@ -19,6 +19,7 @@ This is not yet a scalable system in the operational sense, but the project has 
 - The `infra` directory now contains the first Terraform-managed AWS resource definition for image infrastructure.
 - The first AWS infrastructure slice is live: an Amazon ECR repository for `showingflow-api` exists in `us-east-2`.
 - The repository now has its first GitHub Actions workflow for API test execution and image build validation.
+- Terraform now also defines GitHub Actions OIDC and an IAM role for ECR image publishing from CI.
 
 ### Main API Service
 
@@ -39,6 +40,7 @@ The `services/showingflow-api` service has a credible production baseline for an
 - Environment-variable-driven datasource configuration with local defaults
 - Manual image build, tag, and push flow to Amazon ECR has been proven
 - GitHub Actions automation has started with an API test-and-build workflow
+- AWS-side OIDC trust and ECR push permissions for GitHub Actions are now defined in Terraform
 
 ### Database and Schema Management
 
@@ -118,7 +120,7 @@ Not yet implemented:
 - image push automation in CI
 - automated image publishing to ECR
 - Kubernetes deployment manifests/charts
-- broader Terraform-managed AWS infrastructure beyond the initial ECR repository definition
+- broader Terraform-managed AWS infrastructure beyond the initial ECR and GitHub OIDC slices
 - OpenTelemetry instrumentation and broader observability
 - structured logging and request correlation conventions
 - broader test coverage strategy beyond the first vertical slice
@@ -136,5 +138,6 @@ The important thing is not that there is a lot of code; it is that the existing 
 - the service can now run in a containerized local stack, which is the right bridge toward delivery work
 - the first infrastructure step toward deployability now exists through Terraform-managed ECR definition and a validated manual image push path
 - the first CI slice now exists through a GitHub Actions workflow that runs the API test suite and builds the image
+- the AWS trust path for CI is now defined through Terraform-managed GitHub OIDC and an ECR push role
 
-The next major step should continue moving outward from application code and toward delivery and operations: GitHub Actions should expand from test-only execution into building, tagging, and pushing the API image to ECR using commit SHA tags and AWS OIDC-based authentication. After that, the natural next layer is Kubernetes deployment and EKS automation.
+The next major step should continue moving outward from application code and toward delivery and operations: apply the new OIDC Terraform resources, then update GitHub Actions to assume the AWS role, tag images with the commit SHA, and push them to ECR. After that, the natural next layer is Kubernetes deployment and EKS automation.

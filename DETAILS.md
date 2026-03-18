@@ -60,6 +60,7 @@ The CI side has also now started in a minimal way:
 
 - GitHub Actions is introduced for the API service
 - the first workflow runs the Spring test suite and builds the API Docker image
+- on `push` to `main`, the workflow also assumes the AWS role via OIDC and pushes the image to ECR with a commit-SHA tag
 
 This is the correct early CI slice because it proves the repository can validate the service automatically and can reproduce the Docker build before CI is trusted with image publishing.
 
@@ -161,11 +162,11 @@ Right now the process is:
 
 This has already been done manually once, which is important because it proves the path from source code to cloud image registry is real.
 
-The next step is not to keep doing this manually forever. The next step is to automate the same flow in GitHub Actions using:
+The next step is not to keep doing this manually forever. That automation path is now mostly in place in GitHub Actions using:
 
 - AWS OIDC for short-lived CI credentials
 - image tags based on the Git commit SHA
-- optionally `latest` for a simple moving tag on the main branch
+- optionally `latest` for a simple moving tag on the main branch later
 
 The AWS-side trust model for that is now defined in Terraform:
 
@@ -173,6 +174,11 @@ The AWS-side trust model for that is now defined in Terraform:
 - only this repository is trusted
 - the initial trust policy is restricted to the `main` branch
 - the IAM role permissions are limited to pushing images to the `showingflow-api` ECR repository
+
+The workflow behavior matches that trust model:
+
+- pull requests can test and build
+- only `push` to `main` can authenticate to AWS and publish an image
 
 ## Testing Posture
 
@@ -200,8 +206,7 @@ Still missing:
 - more domain slices such as listings, users, and showing slots
 - the worker service behavior
 - frontend implementation
-- broader CI/CD pipeline beyond the initial API test-and-build workflow
-- GitHub Actions workflow steps that assume the AWS role and push images to ECR
+- broader CI/CD pipeline beyond the initial API test-build-push workflow
 - cloud deployment
 - broader infrastructure as code beyond the first ECR slice
 - tracing, logging conventions, and broader observability

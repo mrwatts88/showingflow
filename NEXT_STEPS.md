@@ -14,6 +14,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Built, tagged, and pushed the API image manually to ECR.
 - Added the first GitHub Actions workflow to run the Spring API test suite and build the API image.
 - Added Terraform definitions for GitHub Actions OIDC and an IAM role for ECR push from CI.
+- Updated the GitHub Actions workflow to assume the AWS role via OIDC and push a commit-SHA-tagged image to ECR on `push` to `main`.
 
 ## Current Verified State
 
@@ -42,23 +43,27 @@ This file is the live handoff for the next session. It should be updated wheneve
   - repository `mrwatts88/showingflow`
   - branch `main`
   - IAM role `github-actions-showingflow-ecr-push`
+- The workflow is now configured to:
+  - request `id-token: write`
+  - assume `github-actions-showingflow-ecr-push`
+  - log in to ECR
+  - tag the image with the short commit SHA
+  - push that tag to ECR on `push` to `main`
 
 ## Recommended Next Tasks
 
-1. Run `terraform init` and `terraform apply` in `infra` to create the GitHub OIDC provider and IAM role in AWS.
-2. Update the GitHub Actions workflow to request `id-token: write`, assume the AWS role, and log in to ECR.
-3. Add ECR push steps that publish a commit-SHA image tag, and decide whether to also publish `latest` on the default branch.
+1. Push this workflow change and verify that a `push` to `main` successfully publishes a commit-SHA-tagged image to ECR.
+2. Decide whether the workflow should also publish `latest` on the default branch in addition to immutable commit-SHA tags.
+3. Start the first Kubernetes deployment artifact, likely a simple manifest or Helm chart that references the ECR image.
 
 ## Risks And Gaps
 
 - `README.md` likely lags behind the current containerized runtime setup.
 - There is still only one implemented domain slice.
 - CI/CD does not exist yet.
-- CI currently covers tests and image build only.
+- CI now includes publish logic, but it has not yet been proven end to end in GitHub.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
-- The ECR push path is still manual only.
 - Terraform state is currently local and should be treated carefully until a remote backend strategy exists.
-- The new OIDC and IAM role resources are defined but not yet applied or verified in AWS from this session.
 
 ## Resume Commands
 
@@ -109,13 +114,6 @@ terraform plan
 terraform apply
 ```
 
-Preview and apply the GitHub OIDC and IAM role resources:
-
-```bash
-terraform plan
-terraform apply
-```
-
 Manual ECR push flow:
 
 ```bash
@@ -142,5 +140,4 @@ Current CI workflow:
 - Docker authenticated to ECR successfully using `aws ecr get-login-password`.
 - The API image was tagged and pushed to ECR successfully.
 - `aws ecr describe-images --repository-name showingflow-api --region us-east-2` confirmed the tagged image plus related OCI artifacts in the repository.
-- The GitHub Actions workflow file was expanded to include image build, but it has not yet been executed and observed in GitHub from this session.
-- The OIDC provider and IAM role were defined in Terraform, but not yet applied or verified in AWS from this session.
+- The GitHub Actions workflow file now contains OIDC auth and ECR push logic, but it has not yet been executed and observed in GitHub from this session.

@@ -7,11 +7,9 @@ Current checkpoint: automate API image build, tag, and push to Amazon ECR from G
 ## CI Image Pipeline
 
 - Run the Spring test suite in CI.
-- Apply the Terraform-managed GitHub OIDC provider and IAM role in AWS.
-- Tag images with the Git commit SHA.
 - Decide whether to also publish a `latest` tag from the default branch.
-- Push the image to ECR from GitHub Actions.
-- Use AWS OIDC and an assumable IAM role instead of stored long-lived AWS secrets.
+- Verify end-to-end GitHub Actions push to ECR using the OIDC role.
+- Decide how image tags should be consumed by deployment manifests.
 
 ## Follow-Through After CI Push Works
 

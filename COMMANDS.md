@@ -121,6 +121,11 @@ Note: the integration tests use Testcontainers, so Docker must be running for `.
 Current workflow:
 
 - `.github/workflows/api-test.yml` runs the Spring API test suite and builds the API Docker image on pushes and pull requests that touch the API service or the workflow itself.
+- On `push` to `main`, the workflow also:
+  - assumes the AWS OIDC role
+  - logs in to ECR
+  - tags the image with the short Git commit SHA
+  - pushes that image to ECR
 
 ## API Checks
 

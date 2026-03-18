@@ -46,6 +46,22 @@ This is important because it proves the full request path works:
 
 That is the first meaningful checkpoint for a real backend service.
 
+The infrastructure side has also now started in a minimal way:
+
+- Terraform exists under `infra`
+- the first Terraform-managed AWS resource is an ECR repository for the API image
+- the ECR repository has been created in AWS
+- a manual Docker login, tag, and push flow to ECR has been proven
+
+This is intentionally small, but it matters because it starts the path from "local Docker image" to "publishable deployment artifact."
+
+The CI side has also now started in a minimal way:
+
+- GitHub Actions is introduced for the API service
+- the first workflow runs the Spring test suite only
+
+This is the correct first CI slice because it proves the repository can validate the service automatically before CI is trusted with image publishing.
+
 ## Why This Is Production-Shaped
 
 Even though the project is still small, several decisions already match a production-oriented system:
@@ -131,6 +147,25 @@ The Compose stack then uses that image build and provides the datasource environ
 
 That gives the project a real local deployment shape, not just a codebase.
 
+## How The AWS Image Path Works
+
+The deployment artifact path has now started to take shape.
+
+Right now the process is:
+
+- build the API image locally with Docker
+- authenticate Docker to Amazon ECR using the AWS CLI
+- tag the local image with the ECR repository path
+- push the image to the ECR repository
+
+This has already been done manually once, which is important because it proves the path from source code to cloud image registry is real.
+
+The next step is not to keep doing this manually forever. The next step is to automate the same flow in GitHub Actions using:
+
+- AWS OIDC for short-lived CI credentials
+- image tags based on the Git commit SHA
+- optionally `latest` for a simple moving tag on the main branch
+
 ## Testing Posture
 
 The project already has an important high-value test path.
@@ -146,6 +181,8 @@ The brokerage integration test verifies:
 
 This is a better early investment than large amounts of low-value unit testing.
 
+That same test path is now the first CI checkpoint as well. The initial GitHub Actions workflow runs the API tests before image-build and deploy automation are introduced.
+
 ## What This Does Not Yet Have
 
 The project is still early. It is not yet a complete production system.
@@ -155,10 +192,10 @@ Still missing:
 - more domain slices such as listings, users, and showing slots
 - the worker service behavior
 - frontend implementation
-- CI/CD pipelines
-- image publishing
+- broader CI/CD pipeline beyond the initial API test workflow
+- automated image publishing from CI
 - cloud deployment
-- infrastructure as code for real environments
+- broader infrastructure as code beyond the first ECR slice
 - tracing, logging conventions, and broader observability
 - security and authorization design
 
@@ -174,7 +211,7 @@ That is exactly the right base to build on. From here, every next step can be la
 
 - more API slices
 - CI automation
-- container publishing
+- automated container publishing
 - Kubernetes deployment
 - operational instrumentation
 

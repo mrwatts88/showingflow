@@ -6,6 +6,9 @@ This file tracks the CLI commands that are valid for the project in its current 
 
 - Java 21 for local Gradle runs
 - Docker Desktop or a compatible Docker engine
+- AWS CLI for AWS access
+- Terraform for infrastructure provisioning
+- GitHub Actions for CI workflows
 
 ## Full Stack In Docker Compose
 
@@ -113,6 +116,12 @@ Build the application jar:
 
 Note: the integration tests use Testcontainers, so Docker must be running for `./gradlew test`.
 
+## GitHub Actions
+
+Current workflow:
+
+- `.github/workflows/api-test.yml` runs the Spring API test suite on pushes and pull requests that touch the API service or the workflow itself.
+
 ## API Checks
 
 Health check:
@@ -124,7 +133,7 @@ curl http://localhost:8080/actuator/health
 Create a brokerage:
 
 ```bash
-curl -X POST http://localhost:8081/brokerages \
+curl -X POST http://localhost:8080/brokerages \
   -H "Content-Type: application/json" \
   -d '{"name":"Compass"}'
 ```
@@ -164,4 +173,82 @@ docker run --rm -p 8080:8080 \
   -e SPRING_DATASOURCE_USERNAME=postgres \
   -e SPRING_DATASOURCE_PASSWORD=postgres \
   showingflow-api
+```
+
+## Terraform
+
+Change into the Terraform directory:
+
+```bash
+cd infra
+```
+
+Initialize Terraform:
+
+```bash
+terraform init
+```
+
+Preview the ECR repository creation:
+
+```bash
+terraform plan
+```
+
+Create the ECR repository:
+
+```bash
+terraform apply
+```
+
+Destroy the ECR repository:
+
+```bash
+terraform destroy
+```
+
+## Amazon ECR
+
+Authenticate Docker to ECR:
+
+```bash
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 409415529879.dkr.ecr.us-east-2.amazonaws.com
+```
+
+Tag the local image as `latest` for ECR:
+
+```bash
+docker tag showingflow-api:latest 409415529879.dkr.ecr.us-east-2.amazonaws.com/showingflow-api:latest
+```
+
+Tag the local image with the current commit SHA for ECR:
+
+```bash
+IMAGE_TAG=$(git rev-parse --short HEAD)
+docker tag showingflow-api:latest 409415529879.dkr.ecr.us-east-2.amazonaws.com/showingflow-api:${IMAGE_TAG}
+```
+
+Push the `latest` tag:
+
+```bash
+docker push 409415529879.dkr.ecr.us-east-2.amazonaws.com/showingflow-api:latest
+```
+
+Push the current commit SHA tag:
+
+```bash
+IMAGE_TAG=$(git rev-parse --short HEAD)
+docker push 409415529879.dkr.ecr.us-east-2.amazonaws.com/showingflow-api:${IMAGE_TAG}
+```
+
+List images in the ECR repository:
+
+```bash
+aws ecr list-images --repository-name showingflow-api --region us-east-2
+```
+
+Describe images in the ECR repository:
+
+```bash
+aws ecr describe-images --repository-name showingflow-api --region us-east-2
 ```

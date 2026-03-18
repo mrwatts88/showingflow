@@ -8,6 +8,11 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Switched Spring datasource config to support `SPRING_DATASOURCE_*` environment variable overrides with local defaults.
 - Expanded Docker Compose so the API and PostgreSQL can run together as a local stack.
 - Added `COMMANDS.md` and `DETAILS.md` to document runtime flows and system behavior.
+- Added a minimal Terraform configuration for an AWS ECR repository in `infra`.
+- Added `.dockerignore` for `services/showingflow-api`.
+- Applied Terraform and created the `showingflow-api` ECR repository in AWS.
+- Built, tagged, and pushed the API image manually to ECR.
+- Added the first GitHub Actions workflow to run the Spring API test suite.
 
 ## Current Verified State
 
@@ -24,21 +29,30 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Host ports in Compose are configurable with:
   - `SHOWINGFLOW_POSTGRES_PORT`
   - `SHOWINGFLOW_API_PORT`
+- The repository now has a minimal Terraform entry point in `infra/main.tf` for creating the `showingflow-api` ECR repository in `us-east-2`.
+- The ECR repository exists in AWS account `409415529879`.
+- A manual ECR push path has been verified:
+  - AWS CLI authentication works
+  - Docker can log in to ECR
+  - the API image can be tagged and pushed to `showingflow-api`
+- ECR currently contains a tagged `latest` image plus related OCI artifacts from the push.
+- The repository now contains `.github/workflows/api-test.yml` for API test execution in GitHub Actions.
 
 ## Recommended Next Tasks
 
-1. Update `README.md` so it reflects the current real runtime modes instead of only the longer-term target architecture.
-2. Add `.dockerignore` under `services/showingflow-api` to keep the image build context cleaner and more stable.
-3. Decide whether the next major effort is:
-   - another backend slice such as `listings`, or
-   - delivery work such as CI for tests and Docker image builds
+1. Expand the GitHub Actions workflow so it builds the Spring API image after tests pass.
+2. Configure AWS access for GitHub Actions using OIDC and an assumable IAM role instead of stored long-lived AWS keys.
+3. Add ECR push steps that publish a commit-SHA image tag, and decide whether to also publish `latest` on the default branch.
 
 ## Risks And Gaps
 
 - `README.md` likely lags behind the current containerized runtime setup.
 - There is still only one implemented domain slice.
 - CI/CD does not exist yet.
+- CI currently covers tests only.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
+- The ECR push path is still manual only.
+- Terraform state is currently local and should be treated carefully until a remote backend strategy exists.
 
 ## Resume Commands
 
@@ -75,9 +89,44 @@ Stop the stack:
 docker compose -f docker/docker-compose.yml down
 ```
 
+Initialize Terraform:
+
+```bash
+cd infra
+terraform init
+```
+
+Preview and apply the ECR repository:
+
+```bash
+terraform plan
+terraform apply
+```
+
+Manual ECR push flow:
+
+```bash
+docker build -t showingflow-api -f services/showingflow-api/Dockerfile services/showingflow-api
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 409415529879.dkr.ecr.us-east-2.amazonaws.com
+IMAGE_TAG=$(git rev-parse --short HEAD)
+docker tag showingflow-api:latest 409415529879.dkr.ecr.us-east-2.amazonaws.com/showingflow-api:${IMAGE_TAG}
+docker push 409415529879.dkr.ecr.us-east-2.amazonaws.com/showingflow-api:${IMAGE_TAG}
+```
+
+Current CI workflow:
+
+```bash
+.github/workflows/api-test.yml
+```
+
 ## Verification Notes
 
 - The Compose file was validated with `docker compose config`.
 - The full stack was brought up successfully in Compose.
 - Compose verification required using an alternate PostgreSQL host port on this machine because port `5432` was already in use locally.
 - API container logs showed successful Spring startup, Flyway migration execution, and a live database connection to `postgres:5432`.
+- `terraform init` and `terraform apply` were run successfully and created the ECR repository in AWS.
+- Docker authenticated to ECR successfully using `aws ecr get-login-password`.
+- The API image was tagged and pushed to ECR successfully.
+- `aws ecr describe-images --repository-name showingflow-api --region us-east-2` confirmed the tagged image plus related OCI artifacts in the repository.
+- The GitHub Actions workflow file was added, but it has not yet been executed and observed in GitHub from this session.

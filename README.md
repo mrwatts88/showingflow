@@ -123,19 +123,21 @@ showingflow
 
 ## Local Development
 
-PostgreSQL is run locally using Docker.
+There are currently two supported local runtime modes.
 
-Start the database:
-
-```
-docker compose up -d
-```
-
-Run the Spring Boot service:
+Run PostgreSQL only in Docker, then run the API on the host:
 
 ```
+docker compose -f docker/docker-compose.yml up -d postgres
+
 cd services/showingflow-api
 ./gradlew bootRun
+```
+
+Run the full local stack in Docker Compose:
+
+```
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
 Verify the service is running:
@@ -150,6 +152,22 @@ Expected response:
 {"status":"UP"}
 ```
 
+## Current Delivery Status
+
+The project now has the first pieces of a real deployment path:
+
+- the Spring API builds into a Docker image
+- the API and PostgreSQL run together in Docker Compose
+- Terraform creates an Amazon ECR repository for the API image
+- a manual image push from Docker to ECR has been completed successfully
+
+What does not exist yet:
+
+- GitHub Actions pipelines
+- automated image push to ECR
+- EKS infrastructure
+- automated deployment to Kubernetes
+
 ## Future Work
 
 Planned areas of expansion include:
@@ -159,7 +177,7 @@ Planned areas of expansion include:
 - event-driven workflow service
 - email/SMS notifications
 - audit and activity history
-- containerized deployment
+- automated container publishing and deployment
 - Kubernetes infrastructure
 - distributed tracing and metrics
 

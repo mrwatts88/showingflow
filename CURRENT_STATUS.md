@@ -16,6 +16,9 @@ This is not yet a scalable system in the operational sense, but the project has 
 - The local runtime now supports both:
   - host-run API with PostgreSQL in Docker
   - full API + PostgreSQL execution in Docker Compose
+- The `infra` directory now contains the first Terraform-managed AWS resource definition for image infrastructure.
+- The first AWS infrastructure slice is live: an Amazon ECR repository for `showingflow-api` exists in `us-east-2`.
+- The repository now has its first GitHub Actions workflow for API test execution.
 
 ### Main API Service
 
@@ -34,6 +37,8 @@ The `services/showingflow-api` service has a credible production baseline for an
   - Lombok
 - Multi-stage Docker image build via `Dockerfile`
 - Environment-variable-driven datasource configuration with local defaults
+- Manual image build, tag, and push flow to Amazon ECR has been proven
+- GitHub Actions test automation has started with an API test workflow
 
 ### Database and Schema Management
 
@@ -110,10 +115,10 @@ Not yet implemented:
 - additional domain slices such as users, listings, showing slots, and showing requests
 - worker service behavior and event-driven workflows
 - frontend application work
-- CI/CD pipelines
-- image publishing to ECR
+- image build and push automation in CI
+- automated image publishing to ECR
 - Kubernetes deployment manifests/charts
-- Terraform-managed AWS infrastructure
+- broader Terraform-managed AWS infrastructure beyond the initial ECR repository definition
 - OpenTelemetry instrumentation and broader observability
 - structured logging and request correlation conventions
 - broader test coverage strategy beyond the first vertical slice
@@ -129,5 +134,7 @@ The important thing is not that there is a lot of code; it is that the existing 
 - the database lifecycle is disciplined
 - the test strategy has started with a realistic integration path instead of toy tests
 - the service can now run in a containerized local stack, which is the right bridge toward delivery work
+- the first infrastructure step toward deployability now exists through Terraform-managed ECR definition and a validated manual image push path
+- the first CI slice now exists through a GitHub Actions workflow that runs the API test suite
 
-The next major step should continue moving outward from application code and toward delivery and operations: build pipeline automation, artifact publishing, and eventually deployment and observability. Another valid option is to add one more domain slice only if the goal is to further prove the established backend pattern before investing in CI/CD.
+The next major step should continue moving outward from application code and toward delivery and operations: GitHub Actions should expand from test-only execution into building, tagging, and pushing the API image to ECR using commit SHA tags and AWS OIDC-based authentication. After that, the natural next layer is Kubernetes deployment and EKS automation.

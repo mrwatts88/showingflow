@@ -2,18 +2,19 @@
 
 This file tracks unfinished work for the current checkpoint only.
 
-Current checkpoint: complete the first vertical API slice for `brokerages` to a production-ready baseline.
+Current checkpoint: automate API image build, tag, and push to Amazon ECR from GitHub Actions.
 
-## API Slice Baseline
+## CI Image Pipeline
 
-- Add unit tests for `BrokerageServiceImpl`, including create, get-by-id, list ordering, and not-found behavior.
-- Add controller tests for `BrokerageController`, covering happy paths, request validation failures, and `404` responses.
-- Decide whether API errors should use plain `ProblemDetail` only or a custom wrapper with stable fields for clients and observability.
-- Add request/response examples and endpoint expectations to project docs for the `brokerages` slice.
-- Add API logging and request correlation conventions before more endpoints are introduced.
-- Confirm Java 21 local toolchain setup so `./gradlew test` and `./gradlew bootRun` work consistently across environments.
+- Run the Spring test suite in CI.
+- Build the Docker image in CI.
+- Tag images with the Git commit SHA.
+- Decide whether to also publish a `latest` tag from the default branch.
+- Push the image to ECR from GitHub Actions.
+- Use AWS OIDC and an assumable IAM role instead of stored long-lived AWS secrets.
 
-## Architecture Follow-Through
+## Follow-Through After CI Push Works
 
-- Add mapper strategy guidance for future slices so controller, service, and entity conversions stay consistent.
-- Define repository and service conventions for sorting, pagination, and not-found handling before more read endpoints are added.
+- Update docs with the exact CI-driven image publishing flow.
+- Decide whether the next step is Kubernetes manifests, Helm, or direct EKS scaffolding.
+- Decide when to introduce a remote Terraform backend for state.

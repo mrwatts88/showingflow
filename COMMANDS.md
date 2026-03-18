@@ -124,8 +124,8 @@ Current workflow:
 - On `push` to `main`, the workflow also:
   - assumes the AWS OIDC role
   - logs in to ECR
-  - tags the image with the short Git commit SHA
-  - pushes that image to ECR
+  - tags the image with the short Git commit SHA and `latest`
+  - pushes both tags to ECR
 
 ## API Checks
 

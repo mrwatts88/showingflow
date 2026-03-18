@@ -6,9 +6,6 @@ Current checkpoint: automate API image build, tag, and push to Amazon ECR from G
 
 ## CI Image Pipeline
 
-- Run the Spring test suite in CI.
-- Decide whether to also publish a `latest` tag from the default branch.
-- Verify end-to-end GitHub Actions push to ECR using the OIDC role.
 - Decide how image tags should be consumed by deployment manifests.
 
 ## Follow-Through After CI Push Works

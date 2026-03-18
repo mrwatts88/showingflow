@@ -15,6 +15,8 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Added the first GitHub Actions workflow to run the Spring API test suite and build the API image.
 - Added Terraform definitions for GitHub Actions OIDC and an IAM role for ECR push from CI.
 - Updated the GitHub Actions workflow to assume the AWS role via OIDC and push a commit-SHA-tagged image to ECR on `push` to `main`.
+- Verified in GitHub that the workflow successfully pushed an updated image to ECR.
+- Updated the workflow to also tag and push `latest` on `main`.
 
 ## Current Verified State
 
@@ -47,21 +49,23 @@ This file is the live handoff for the next session. It should be updated wheneve
   - request `id-token: write`
   - assume `github-actions-showingflow-ecr-push`
   - log in to ECR
-  - tag the image with the short commit SHA
-  - push that tag to ECR on `push` to `main`
+  - tag the image with the short commit SHA and `latest`
+  - push both tags to ECR on `push` to `main`
+- That CI publish path has been observed working end to end in GitHub Actions.
 
 ## Recommended Next Tasks
 
-1. Push this workflow change and verify that a `push` to `main` successfully publishes a commit-SHA-tagged image to ECR.
-2. Decide whether the workflow should also publish `latest` on the default branch in addition to immutable commit-SHA tags.
-3. Start the first Kubernetes deployment artifact, likely a simple manifest or Helm chart that references the ECR image.
+1. Push this workflow change and verify that `main` now publishes both commit-SHA and `latest` tags to ECR.
+2. Start the first Kubernetes deployment artifact, likely a simple manifest or Helm chart that references the ECR image.
+3. Decide whether to keep Terraform state local for now or introduce a remote backend before EKS work grows.
 
 ## Risks And Gaps
 
 - `README.md` likely lags behind the current containerized runtime setup.
 - There is still only one implemented domain slice.
 - CI/CD does not exist yet.
-- CI now includes publish logic, but it has not yet been proven end to end in GitHub.
+- CI now includes a proven ECR publish path, but deployment beyond image publishing does not exist yet.
+- The new `latest` tag behavior has not yet been re-verified in GitHub from this session.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
 - Terraform state is currently local and should be treated carefully until a remote backend strategy exists.
 
@@ -140,4 +144,5 @@ Current CI workflow:
 - Docker authenticated to ECR successfully using `aws ecr get-login-password`.
 - The API image was tagged and pushed to ECR successfully.
 - `aws ecr describe-images --repository-name showingflow-api --region us-east-2` confirmed the tagged image plus related OCI artifacts in the repository.
-- The GitHub Actions workflow file now contains OIDC auth and ECR push logic, but it has not yet been executed and observed in GitHub from this session.
+- The GitHub Actions workflow was observed succeeding in GitHub, including AWS OIDC auth and pushing an updated image to ECR.
+- The new `latest` tagging and push logic exists in the workflow but has not yet been observed in GitHub from this session.

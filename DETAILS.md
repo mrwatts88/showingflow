@@ -60,7 +60,8 @@ The CI side has also now started in a minimal way:
 
 - GitHub Actions is introduced for the API service
 - the first workflow runs the Spring test suite and builds the API Docker image
-- on `push` to `main`, the workflow also assumes the AWS role via OIDC and pushes the image to ECR with a commit-SHA tag
+- on `push` to `main`, the workflow also assumes the AWS role via OIDC and pushes the image to ECR with both a commit-SHA tag and `latest`
+- that end-to-end CI publish path has now been verified successfully
 
 This is the correct early CI slice because it proves the repository can validate the service automatically and can reproduce the Docker build before CI is trusted with image publishing.
 
@@ -166,7 +167,7 @@ The next step is not to keep doing this manually forever. That automation path i
 
 - AWS OIDC for short-lived CI credentials
 - image tags based on the Git commit SHA
-- optionally `latest` for a simple moving tag on the main branch later
+- `latest` as a simple moving tag on the main branch
 
 The AWS-side trust model for that is now defined in Terraform:
 
@@ -179,6 +180,12 @@ The workflow behavior matches that trust model:
 
 - pull requests can test and build
 - only `push` to `main` can authenticate to AWS and publish an image
+
+That path is now real, not theoretical:
+
+- GitHub Actions can assume the AWS role
+- the workflow can log in to ECR
+- the workflow can push both commit-SHA-tagged and `latest` images to the `showingflow-api` repository
 
 ## Testing Posture
 

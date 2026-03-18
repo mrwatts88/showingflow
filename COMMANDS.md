@@ -120,7 +120,7 @@ Note: the integration tests use Testcontainers, so Docker must be running for `.
 
 Current workflow:
 
-- `.github/workflows/api-test.yml` runs the Spring API test suite on pushes and pull requests that touch the API service or the workflow itself.
+- `.github/workflows/api-test.yml` runs the Spring API test suite and builds the API Docker image on pushes and pull requests that touch the API service or the workflow itself.
 
 ## API Checks
 

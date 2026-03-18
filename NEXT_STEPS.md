@@ -12,7 +12,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Added `.dockerignore` for `services/showingflow-api`.
 - Applied Terraform and created the `showingflow-api` ECR repository in AWS.
 - Built, tagged, and pushed the API image manually to ECR.
-- Added the first GitHub Actions workflow to run the Spring API test suite.
+- Added the first GitHub Actions workflow to run the Spring API test suite and build the API image.
 
 ## Current Verified State
 
@@ -36,20 +36,20 @@ This file is the live handoff for the next session. It should be updated wheneve
   - Docker can log in to ECR
   - the API image can be tagged and pushed to `showingflow-api`
 - ECR currently contains a tagged `latest` image plus related OCI artifacts from the push.
-- The repository now contains `.github/workflows/api-test.yml` for API test execution in GitHub Actions.
+- The repository now contains `.github/workflows/api-test.yml` for API test execution and Docker image build in GitHub Actions.
 
 ## Recommended Next Tasks
 
-1. Expand the GitHub Actions workflow so it builds the Spring API image after tests pass.
-2. Configure AWS access for GitHub Actions using OIDC and an assumable IAM role instead of stored long-lived AWS keys.
-3. Add ECR push steps that publish a commit-SHA image tag, and decide whether to also publish `latest` on the default branch.
+1. Configure AWS access for GitHub Actions using OIDC and an assumable IAM role instead of stored long-lived AWS keys.
+2. Add ECR push steps to the workflow so it publishes a commit-SHA image tag after tests and image build succeed.
+3. Decide whether the workflow should also publish `latest` on the default branch in addition to immutable commit-SHA tags.
 
 ## Risks And Gaps
 
 - `README.md` likely lags behind the current containerized runtime setup.
 - There is still only one implemented domain slice.
 - CI/CD does not exist yet.
-- CI currently covers tests only.
+- CI currently covers tests and image build only.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
 - The ECR push path is still manual only.
 - Terraform state is currently local and should be treated carefully until a remote backend strategy exists.
@@ -129,4 +129,4 @@ Current CI workflow:
 - Docker authenticated to ECR successfully using `aws ecr get-login-password`.
 - The API image was tagged and pushed to ECR successfully.
 - `aws ecr describe-images --repository-name showingflow-api --region us-east-2` confirmed the tagged image plus related OCI artifacts in the repository.
-- The GitHub Actions workflow file was added, but it has not yet been executed and observed in GitHub from this session.
+- The GitHub Actions workflow file was expanded to include image build, but it has not yet been executed and observed in GitHub from this session.

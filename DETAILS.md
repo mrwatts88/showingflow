@@ -58,9 +58,9 @@ This is intentionally small, but it matters because it starts the path from "loc
 The CI side has also now started in a minimal way:
 
 - GitHub Actions is introduced for the API service
-- the first workflow runs the Spring test suite only
+- the first workflow runs the Spring test suite and builds the API Docker image
 
-This is the correct first CI slice because it proves the repository can validate the service automatically before CI is trusted with image publishing.
+This is the correct early CI slice because it proves the repository can validate the service automatically and can reproduce the Docker build before CI is trusted with image publishing.
 
 ## Why This Is Production-Shaped
 
@@ -181,7 +181,7 @@ The brokerage integration test verifies:
 
 This is a better early investment than large amounts of low-value unit testing.
 
-That same test path is now the first CI checkpoint as well. The initial GitHub Actions workflow runs the API tests before image-build and deploy automation are introduced.
+That same test path is now the first CI checkpoint as well. The initial GitHub Actions workflow runs the API tests and builds the image before push and deploy automation are introduced.
 
 ## What This Does Not Yet Have
 
@@ -192,7 +192,7 @@ Still missing:
 - more domain slices such as listings, users, and showing slots
 - the worker service behavior
 - frontend implementation
-- broader CI/CD pipeline beyond the initial API test workflow
+- broader CI/CD pipeline beyond the initial API test-and-build workflow
 - automated image publishing from CI
 - cloud deployment
 - broader infrastructure as code beyond the first ECR slice

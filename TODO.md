@@ -2,14 +2,30 @@
 
 This file tracks unfinished work for the current checkpoint only.
 
-Current checkpoint: automate API image build, tag, and push to Amazon ECR from GitHub Actions.
+Current checkpoint: make Terraform production-ready before EKS work begins.
 
-## CI Image Pipeline
+## Terraform State And Backend
 
-- Decide how image tags should be consumed by deployment manifests.
+- Choose the remote backend approach for Terraform state.
+- Create the backend infrastructure needed for remote state.
+- Move Terraform state out of local `terraform.tfstate`.
+- Decide how state locking will work for this repo.
 
-## Follow-Through After CI Push Works
+## Terraform CI Discipline
 
-- Update docs with the exact CI-driven image publishing flow.
-- Decide whether the next step is Kubernetes manifests, Helm, or direct EKS scaffolding.
-- Decide when to introduce a remote Terraform backend for state.
+- Add GitHub Actions checks for `terraform fmt`.
+- Add GitHub Actions checks for `terraform validate`.
+- Add GitHub Actions checks for `terraform plan`.
+- Use OIDC for Terraform CI access as well, not static AWS secrets.
+
+## Apply Policy
+
+- Decide whether Terraform `apply` remains manual for now.
+- If `apply` moves toward CI later, define the guardrails first.
+- Decide what branch or environment protections are required before CI-driven apply.
+
+## Follow-Through After Terraform Is Production-Shaped
+
+- Update docs with the exact Terraform backend and CI workflow.
+- Then decide whether the next step is Kubernetes manifests, Helm, or direct EKS scaffolding.
+- Revisit whether a remote backend strategy is sufficient before creating EKS resources.

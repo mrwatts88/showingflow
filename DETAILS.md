@@ -1,244 +1,348 @@
 # ShowingFlow Details
 
-This file explains the system in plain English as it exists today. It is meant to be a study guide for understanding how a small but production-shaped backend system is put together, why certain choices were made, and what is still missing.
+This file is meant to be a learning resource, not just a status note. It explains the system in plain English as it exists today, why it is structured the way it is, and what each part is doing.
 
-## What ShowingFlow Is
+## Brief Overview
 
-ShowingFlow is a small monorepo for a real-estate showing platform. The product domain is intentionally simple. The real purpose of the project is to practice building a system with the shape of a serious production application.
+ShowingFlow is a small monorepo for a real-estate showing platform. The business domain is intentionally simple. The real purpose of the project is to practice building a backend system with a production-shaped architecture and delivery path.
 
-That means the project is not mainly about shipping a lot of end-user features quickly. It is about building the habits and structure of a senior-level system:
+Today, the project already proves several important things:
 
-- clear service boundaries
-- disciplined database migrations
-- containerized local runtime
-- realistic testing
-- room to grow into CI/CD, cloud deployment, and observability
+- a Spring Boot API can boot, validate requests, talk to PostgreSQL, and persist real data
+- database schema changes are managed through Flyway migrations
+- the API can run both locally on the host and in Docker
+- the API image can be built locally and in GitHub Actions
+- the image can be pushed to Amazon ECR manually and from CI
+- GitHub Actions can authenticate to AWS through OIDC instead of long-lived AWS keys
 
-## What Exists Right Now
+That is a strong early foundation. It means the project is no longer just application code. It has the beginnings of real runtime, packaging, and cloud delivery discipline.
 
-Today, the main real implementation is the Spring API service in `services/showingflow-api`.
+## What The System Is Trying To Become
+
+The long-term target is a small but complete production-style platform with:
+
+- a Spring API
+- additional services as needed
+- a frontend
+- AWS-managed infrastructure
+- CI/CD automation
+- observability
+- eventually Kubernetes and EKS
+
+The project is not there yet. The important point is that the path toward that shape is already visible in the codebase and docs.
+
+## Repository Shape
+
+The repo is a monorepo. That matters because application code, infrastructure code, and documentation are evolving together in one place.
+
+The important directories today are:
+
+- `services/showingflow-api`
+  The main Spring Boot application
+- `docker`
+  Local Docker Compose runtime for PostgreSQL and the API
+- `infra`
+  Terraform infrastructure definitions
+- `.github/workflows`
+  GitHub Actions workflows
+
+There are also placeholder areas for broader system growth such as frontend, worker services, and future infrastructure work.
+
+## What Exists Today
+
+The main implemented system is the Spring API service in `services/showingflow-api`.
 
 That service currently has:
 
 - Spring Boot 4
 - Java 21
 - Gradle
-- PostgreSQL
-- Flyway migrations
+- Spring Web MVC
 - Spring Data JPA
 - Bean Validation
+- Flyway
+- PostgreSQL
 - Spring Actuator
 
-The first full backend slice is `brokerages`. It supports:
+The first implemented domain slice is `brokerages`.
+
+That slice currently supports:
 
 - `POST /brokerages`
 - `GET /brokerages`
 - `GET /brokerages/{id}`
 
-This is important because it proves the full request path works:
+This matters because it proves a complete vertical path:
 
-- HTTP request enters the controller
-- request validation is applied
-- service-layer logic runs
-- data is saved to PostgreSQL
-- Flyway controls the schema
-- standardized errors are returned when needed
+- a request enters the controller
+- the request body is validated
+- the service layer handles application logic
+- the repository persists data
+- PostgreSQL stores the data
+- the response is returned with structured error handling where needed
 
-That is the first meaningful checkpoint for a real backend service.
+That is the first real checkpoint for a serious backend system. It is more valuable than having many shallow endpoints.
 
-The infrastructure side has also now started in a minimal way:
+## How The API Is Structured
 
-- Terraform exists under `infra`
-- the first Terraform-managed AWS resource is an ECR repository for the API image
-- the ECR repository has been created in AWS
-- a manual Docker login, tag, and push flow to ECR has been proven
-- Terraform now also defines the GitHub Actions OIDC provider and an IAM role for CI-based ECR pushes
+The API is intentionally not written as a pile of controllers and entities.
 
-This is intentionally small, but it matters because it starts the path from "local Docker image" to "publishable deployment artifact."
+The brokerage slice is structured with separate concerns:
 
-The CI side has also now started in a minimal way:
+- web models for HTTP input and output
+- service-level command/result types
+- persistence entities and repositories
+- feature-local exception handling
 
-- GitHub Actions is introduced for the API service
-- the first workflow runs the Spring test suite and builds the API Docker image
-- on `push` to `main`, the workflow also assumes the AWS role via OIDC and pushes the image to ECR with both a commit-SHA tag and `latest`
-- that end-to-end CI publish path has now been verified successfully
+That separation is important because it keeps:
 
-This is the correct early CI slice because it proves the repository can validate the service automatically and can reproduce the Docker build before CI is trusted with image publishing.
+- HTTP concerns from leaking everywhere
+- database models from becoming the public API
+- business logic from getting trapped in controllers
 
-## Why This Is Production-Shaped
+This is a common senior-level backend pattern: keep feature slices coherent and keep boundaries explicit.
 
-Even though the project is still small, several decisions already match a production-oriented system:
+## Database And Schema Management
 
-- The database schema is owned by Flyway migrations, not by Hibernate auto-creation.
-- Hibernate is set to validate the schema, not invent it.
-- The code separates web DTOs, service models, and persistence entities.
-- Integration tests run against real PostgreSQL through Testcontainers instead of a fake in-memory database.
-- The app exposes actuator endpoints for basic operational visibility.
+PostgreSQL is the system of record.
 
-These are the kinds of choices that matter more than having lots of endpoints early on.
+The important design choice is that schema ownership belongs to Flyway, not Hibernate.
 
-## How The System Runs
+That means:
 
-There are currently two main local runtime modes.
+- database changes happen through versioned SQL migrations
+- schema history is explicit
+- environments can be upgraded in a controlled way
+- the ORM does not silently create or mutate schema behind your back
 
-### 1. API On The Host, PostgreSQL In Docker (via Compose)
+Hibernate is configured with `ddl-auto: validate`, which is the correct posture for a production-oriented system. It checks that the code matches the database, but it does not attempt to own the database lifecycle.
 
-This is the normal development-friendly mode.
+The first migration creates the `brokerages` table.
 
-In this setup:
+## Testing Strategy
+
+The project already uses the right kind of early tests.
+
+Instead of relying on mocks or an in-memory substitute database, the main integration test uses:
+
+- Spring Boot test support
+- MockMvc
+- Testcontainers
+- real PostgreSQL
+- Flyway migrations during test startup
+
+That proves much more than a toy unit test:
+
+- the application context boots
+- the database wiring works
+- migrations apply
+- validation behaves correctly
+- error handling is real
+- data can be written and read back through the full stack
+
+This is one of the strongest engineering choices in the project so far.
+
+## Runtime Modes
+
+The system currently supports two useful local runtime modes.
+
+### 1. API On Host, Database In Docker
+
+In this mode:
 
 - PostgreSQL runs in Docker
-- the Spring API runs on your machine with `./gradlew bootRun`
+- the API runs on your machine with Gradle
 - the API connects to PostgreSQL through `localhost`
 
-This is useful because application iteration is fast while the database is still isolated and repeatable.
+This mode is best for normal development because the app can be restarted quickly while the database stays isolated and repeatable.
 
 ### 2. Full Stack In Docker Compose
 
-This is the more deployment-like local mode.
+In this mode:
 
-In this setup:
+- PostgreSQL runs in one container
+- the API runs in another container
+- Docker Compose provides shared networking and startup orchestration
+- the API connects to PostgreSQL by service name: `postgres`
 
-- PostgreSQL runs as one container
-- the Spring API runs as another container
-- Docker Compose places both services on the same Docker network
-- the API connects to the database by service name: `postgres`
-
-This matters because it proves the application can run as a real containerized service instead of only working through a local IDE workflow.
-
-## Why Docker Compose Matters
-
-Docker Compose is doing more than just starting containers.
-
-It gives the project:
-
-- a repeatable local stack definition
-- shared networking between services
-- basic startup orchestration
-- service discovery by container/service name
-
-Because of that shared network, the API container can connect to PostgreSQL with:
-
-`jdbc:postgresql://postgres:5432/showingflow`
-
-That hostname works because `postgres` is the Compose service name. This is standard container-to-container communication.
+This mode is best for proving the application behaves like a real containerized service rather than only working from an IDE-driven host environment.
 
 ## Why Environment Variables Matter
 
-The Spring service is configured so the datasource can be overridden with environment variables:
+The datasource configuration is environment-driven through standard Spring properties:
 
 - `SPRING_DATASOURCE_URL`
 - `SPRING_DATASOURCE_USERNAME`
 - `SPRING_DATASOURCE_PASSWORD`
 
-The application config also provides defaults for local development. That means the same application can work in different environments without changing code:
+The application also provides sensible local defaults.
 
-- local host-run API with default `localhost`
-- host-run API with explicit overrides
-- containerized API with Docker Compose values
+That combination matters because the same code can run in different places:
 
-This is a core production habit. Configuration should come from the environment, while the application code stays the same.
+- on a developer laptop
+- in Docker Compose
+- in CI
+- later in Kubernetes
 
-## How The Container Setup Works
+This is a core production habit: keep code stable, vary configuration by environment.
 
-The API service has a Dockerfile that:
+## Docker And Image Packaging
 
-- builds the Spring Boot jar in a Java 21 builder image
-- runs the jar in a smaller Java 21 runtime image
+The API has a multi-stage Dockerfile.
 
-The Compose stack then uses that image build and provides the datasource environment variables. PostgreSQL has a health check, and the API waits for PostgreSQL to be healthy before startup.
+That means:
 
-That gives the project a real local deployment shape, not just a codebase.
+- one image stage builds the Spring Boot jar with Java 21
+- another, smaller runtime image runs the built artifact
 
-## How The AWS Image Path Works
+Why this matters:
 
-The deployment artifact path has now started to take shape.
+- image builds are reproducible
+- the runtime image is leaner than the build image
+- the same packaging approach works locally and in CI
 
-Right now the process is:
+This is the bridge from “application code” to “deployable artifact.”
 
-- build the API image locally with Docker
-- authenticate Docker to Amazon ECR using the AWS CLI
-- tag the local image with the ECR repository path
-- push the image to the ECR repository
+## Amazon ECR And Image Registry Flow
 
-This has already been done manually once, which is important because it proves the path from source code to cloud image registry is real.
+The project now has a real image registry path in AWS.
 
-The next step is not to keep doing this manually forever. That automation path is now mostly in place in GitHub Actions using:
+Terraform created an ECR repository named `showingflow-api`.
 
-- AWS OIDC for short-lived CI credentials
-- image tags based on the Git commit SHA
-- `latest` as a simple moving tag on the main branch
+The image flow now exists in two forms:
 
-The AWS-side trust model for that is now defined in Terraform:
+### Manual Path
+
+The manual path has already been proven:
+
+- build the image with Docker
+- log Docker into ECR through the AWS CLI
+- tag the image for the ECR repository
+- push the image
+
+This is important because it proved the artifact path before CI automation was added.
+
+### CI Path
+
+The CI path is also now real:
+
+- GitHub Actions runs the Spring tests
+- GitHub Actions builds the Docker image
+- on `push` to `main`, GitHub Actions assumes an AWS role through OIDC
+- GitHub Actions logs in to ECR
+- GitHub Actions tags and pushes the image
+
+The workflow currently publishes:
+
+- a short commit-SHA tag
+- `latest`
+
+That means the project now has a credible, working build-and-publish pipeline for the API image.
+
+## GitHub Actions And OIDC
+
+A very important production-style decision has already been made here.
+
+CI does not use stored long-lived AWS access keys.
+
+Instead:
 
 - AWS trusts GitHub's OIDC provider
-- only this repository is trusted
-- the initial trust policy is restricted to the `main` branch
-- the IAM role permissions are limited to pushing images to the `showingflow-api` ECR repository
+- Terraform defines an IAM role for GitHub Actions
+- GitHub Actions requests an OIDC token
+- AWS issues short-lived credentials for that run
 
-The workflow behavior matches that trust model:
+Why this matters:
 
-- pull requests can test and build
-- only `push` to `main` can authenticate to AWS and publish an image
+- no static AWS secrets are sitting in GitHub
+- access is temporary
+- the trust policy can be restricted
+- the current trust is limited to this repository and the `main` branch
 
-That path is now real, not theoretical:
+This is a much better security posture than the older secret-key pattern.
 
-- GitHub Actions can assume the AWS role
-- the workflow can log in to ECR
-- the workflow can push both commit-SHA-tagged and `latest` images to the `showingflow-api` repository
+## What Terraform Is Doing Today
 
-## Testing Posture
+Terraform currently manages the first AWS slices:
 
-The project already has an important high-value test path.
+- the ECR repository
+- the GitHub OIDC provider
+- the IAM role used by GitHub Actions for ECR push
 
-The brokerage integration test verifies:
+That means Terraform is already part of the system, not a future idea.
 
-- the Spring application boots
-- PostgreSQL is available
-- Flyway migrations apply
-- requests can create and read data
-- validation failures are returned in a standardized way
-- not-found and malformed request handling works
+However, Terraform is not yet production-shaped. The main limitation is that state is still local.
 
-This is a better early investment than large amounts of low-value unit testing.
+That means:
 
-That same test path is now the first CI checkpoint as well. The initial GitHub Actions workflow runs the API tests and builds the image before push and deploy automation are introduced.
+- one machine currently holds the infrastructure state
+- collaboration is fragile
+- CI cannot safely become the main place for infrastructure change yet
+- EKS would add too much complexity on top of a weak state model
 
-## What This Does Not Yet Have
+This is why Terraform maturity is now the right next initiative.
 
-The project is still early. It is not yet a complete production system.
+## Why Terraform Maturity Comes Before EKS
+
+It is tempting to go straight from ECR to Kubernetes, but that would be backward.
+
+Before EKS work grows, Terraform should become more production-ready:
+
+- remote backend for shared durable state
+- CI checks such as `fmt`, `validate`, and `plan`
+- a deliberate policy for when `terraform apply` is allowed
+
+Why that matters:
+
+- infrastructure changes should have the same discipline as application builds
+- shared state becomes the source of truth instead of one laptop
+- infra plans become reviewable
+- risky automation can be gated properly before the AWS footprint gets larger
+
+This is the right “next layer of seriousness” for the project.
+
+## What Is Still Missing
+
+The project is still early. It is not yet a full production system.
 
 Still missing:
 
 - more domain slices such as listings, users, and showing slots
-- the worker service behavior
+- worker service behavior
 - frontend implementation
-- broader CI/CD pipeline beyond the initial API test-build-push workflow
-- cloud deployment
-- broader infrastructure as code beyond the first ECR slice
-- tracing, logging conventions, and broader observability
-- security and authorization design
+- production-shaped Terraform backend and Terraform CI discipline
+- Kubernetes deployment artifacts
+- EKS infrastructure
+- broader observability
+- security and authorization design beyond the current CI trust path
 
-So the system is production-shaped, but not production-complete.
+That is normal. The project already has enough shape to make the next steps meaningful.
 
 ## How To Think About The Current State
 
-The best way to understand the project today is this:
+The best summary is this:
 
-It is a correctly structured backend foundation with a real database, real migrations, real integration testing, and a real containerized local runtime.
+ShowingFlow is now a real backend foundation with:
 
-That is exactly the right base to build on. From here, every next step can be layered on top of something credible:
+- disciplined schema management
+- realistic integration testing
+- containerized runtime
+- cloud image registry
+- CI-based image publishing to AWS
 
-- more API slices
-- CI automation
-- automated container publishing
-- Kubernetes deployment
-- operational instrumentation
+That is a very solid base.
+
+The next challenge is not “write random new features.” It is to keep improving the operational maturity of the system in the right order.
 
 ## Related Files
 
-- `README.md` describes the broader project goal.
-- `CURRENT_STATUS.md` summarizes the current implementation state.
-- `COMMANDS.md` lists the commands that currently work.
-- `docker/docker-compose.yml` defines the local container stack.
-- `services/showingflow-api/src/main/resources/application.yaml` defines the current Spring configuration defaults and env-var overrides.
+- `README.md`
+  High-level project framing
+- `CURRENT_STATUS.md`
+  Current checkpoint and assessment
+- `COMMANDS.md`
+  Commands that actually work today
+- `NEXT_STEPS.md`
+  Active handoff for the next session
+- `TODO.md`
+  Current initiative checklist

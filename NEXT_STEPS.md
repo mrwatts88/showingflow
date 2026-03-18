@@ -55,9 +55,9 @@ This file is the live handoff for the next session. It should be updated wheneve
 
 ## Recommended Next Tasks
 
-1. Push this workflow change and verify that `main` now publishes both commit-SHA and `latest` tags to ECR.
-2. Start the first Kubernetes deployment artifact, likely a simple manifest or Helm chart that references the ECR image.
-3. Decide whether to keep Terraform state local for now or introduce a remote backend before EKS work grows.
+1. Move Terraform state to a remote backend so infrastructure state is no longer local-only.
+2. Add Terraform CI discipline with at least `fmt`, `validate`, and `plan` in GitHub Actions.
+3. Decide the policy for Terraform `apply`: manual only for now, or gated CI apply after backend and plan flows are stable.
 
 ## Risks And Gaps
 
@@ -68,6 +68,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 - The new `latest` tag behavior has not yet been re-verified in GitHub from this session.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
 - Terraform state is currently local and should be treated carefully until a remote backend strategy exists.
+- EKS work would be premature until Terraform state and CI discipline are stronger.
 
 ## Resume Commands
 
@@ -146,3 +147,15 @@ Current CI workflow:
 - `aws ecr describe-images --repository-name showingflow-api --region us-east-2` confirmed the tagged image plus related OCI artifacts in the repository.
 - The GitHub Actions workflow was observed succeeding in GitHub, including AWS OIDC auth and pushing an updated image to ECR.
 - The new `latest` tagging and push logic exists in the workflow but has not yet been observed in GitHub from this session.
+
+## Next Initiative
+
+The next initiative is not Kubernetes first.
+
+The next initiative is to make Terraform production-shaped:
+
+- remote backend for shared durable state
+- CI checks for Terraform quality and plan visibility
+- clear policy for when and how `terraform apply` is allowed
+
+That should happen before substantial EKS work.

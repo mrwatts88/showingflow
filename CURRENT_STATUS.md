@@ -143,4 +143,4 @@ The important thing is not that there is a lot of code; it is that the existing 
 - the AWS trust path for CI is now defined through Terraform-managed GitHub OIDC and an ECR push role
 - the workflow logic for automated publish now exists and has been proven end to end in GitHub
 
-The next major step should continue moving outward from application code and toward delivery and operations: verify the updated workflow publishes both commit-SHA and `latest` tags, then start the first Kubernetes deployment artifacts that consume the ECR image. After that, the natural next layer is EKS automation.
+The next major step should continue moving outward from application code and toward delivery and operations, but the priority should now be Terraform maturity rather than Kubernetes artifacts. Before EKS work grows, Terraform should move to a remote backend, gain CI checks such as `fmt`, `validate`, and `plan`, and have a deliberate policy for when `apply` is allowed. After that, the natural next layer is Kubernetes deployment and EKS automation.

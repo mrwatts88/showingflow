@@ -17,6 +17,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Updated the GitHub Actions workflow to assume the AWS role via OIDC and push a commit-SHA-tagged image to ECR on `push` to `main`.
 - Verified in GitHub that the workflow successfully pushed an updated image to ECR.
 - Updated the workflow to also tag and push `latest` on `main`.
+- Created a bootstrap Terraform config for the remote state bucket and migrated the main infra state to an S3 backend with lockfile-based locking.
 
 ## Current Verified State
 
@@ -45,6 +46,10 @@ This file is the live handoff for the next session. It should be updated wheneve
   - repository `mrwatts88/showingflow`
   - branch `main`
   - IAM role `github-actions-showingflow-ecr-push`
+- The main `infra` state is now stored remotely in S3:
+  - bucket `showingflow-terraform-state-409415529879-us-east-2`
+  - key `infra/terraform.tfstate`
+  - `use_lockfile = true`
 - The workflow is now configured to:
   - request `id-token: write`
   - assume `github-actions-showingflow-ecr-push`
@@ -55,9 +60,9 @@ This file is the live handoff for the next session. It should be updated wheneve
 
 ## Recommended Next Tasks
 
-1. Move Terraform state to a remote backend so infrastructure state is no longer local-only.
-2. Add Terraform CI discipline with at least `fmt`, `validate`, and `plan` in GitHub Actions.
-3. Decide the policy for Terraform `apply`: manual only for now, or gated CI apply after backend and plan flows are stable.
+1. Add Terraform CI discipline with at least `fmt`, `validate`, and `plan` in GitHub Actions.
+2. Decide the policy for Terraform `apply`: manual only for now, or gated CI apply after backend and plan flows are stable.
+3. Decide whether the bootstrap state bucket config should remain a separate local-state bootstrap layer or evolve into a longer-term pattern.
 
 ## Risks And Gaps
 
@@ -67,8 +72,8 @@ This file is the live handoff for the next session. It should be updated wheneve
 - CI now includes a proven ECR publish path, but deployment beyond image publishing does not exist yet.
 - The new `latest` tag behavior has not yet been re-verified in GitHub from this session.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
-- Terraform state is currently local and should be treated carefully until a remote backend strategy exists.
-- EKS work would be premature until Terraform state and CI discipline are stronger.
+- Terraform CI discipline is still missing even though the backend is now remote.
+- EKS work would still be premature until Terraform checks and apply policy are stronger.
 
 ## Resume Commands
 
@@ -112,6 +117,19 @@ cd infra
 terraform init
 ```
 
+Initialize and apply the bootstrap state bucket config:
+
+```bash
+terraform -chdir=bootstrap init
+terraform -chdir=bootstrap apply
+```
+
+Migrate the main infra state into the S3 backend:
+
+```bash
+terraform init -migrate-state -force-copy
+```
+
 Preview and apply the ECR repository:
 
 ```bash
@@ -147,6 +165,9 @@ Current CI workflow:
 - `aws ecr describe-images --repository-name showingflow-api --region us-east-2` confirmed the tagged image plus related OCI artifacts in the repository.
 - The GitHub Actions workflow was observed succeeding in GitHub, including AWS OIDC auth and pushing an updated image to ECR.
 - The new `latest` tagging and push logic exists in the workflow but has not yet been observed in GitHub from this session.
+- The remote state bucket was created successfully in S3.
+- `terraform init -migrate-state -force-copy` succeeded for the main infra config.
+- `terraform -chdir=infra plan` returned `No changes` after migration, confirming the remote backend is working.
 
 ## Next Initiative
 
@@ -158,4 +179,4 @@ The next initiative is to make Terraform production-shaped:
 - CI checks for Terraform quality and plan visibility
 - clear policy for when and how `terraform apply` is allowed
 
-That should happen before substantial EKS work.
+The backend piece is now in place for the main infra config. The next priority is CI discipline and apply policy before substantial EKS work.

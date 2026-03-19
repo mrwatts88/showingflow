@@ -2,14 +2,7 @@
 
 This file tracks unfinished work for the current checkpoint only.
 
-Current checkpoint: make Terraform production-ready before EKS work begins.
-
-## Terraform State And Backend
-
-- Choose the remote backend approach for Terraform state.
-- Create the backend infrastructure needed for remote state.
-- Move Terraform state out of local `terraform.tfstate`.
-- Decide how state locking will work for this repo.
+Current checkpoint: add Terraform CI discipline now that the main infra state uses a remote backend.
 
 ## Terraform CI Discipline
 
@@ -23,6 +16,11 @@ Current checkpoint: make Terraform production-ready before EKS work begins.
 - Decide whether Terraform `apply` remains manual for now.
 - If `apply` moves toward CI later, define the guardrails first.
 - Decide what branch or environment protections are required before CI-driven apply.
+
+## Backend Follow-Through
+
+- Decide whether the bootstrap state bucket config should remain a separate local-state layer.
+- Decide whether the backend bucket needs additional hardening beyond versioning, encryption, and public-access blocking.
 
 ## Follow-Through After Terraform Is Production-Shaped
 

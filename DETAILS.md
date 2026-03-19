@@ -271,14 +271,34 @@ Terraform currently manages the first AWS slices:
 
 That means Terraform is already part of the system, not a future idea.
 
-However, Terraform is not yet production-shaped. The main limitation is that state is still local.
+Terraform now also has a remote backend for the main infrastructure state.
+
+The current backend model is split into two layers:
+
+- `infra/bootstrap`
+  A small bootstrap Terraform config that creates the S3 bucket used for Terraform state
+- `infra`
+  The main infrastructure config, which now stores its state in that S3 bucket
+
+The main infra backend uses:
+
+- S3 for remote state storage
+- versioning on the bucket
+- encryption at rest
+- public access blocking
+- lockfile-based state locking with `use_lockfile = true`
+
+That is a meaningful improvement because the main infrastructure state is no longer local-only.
+
+However, Terraform is still not fully production-shaped yet.
 
 That means:
 
-- one machine currently holds the infrastructure state
-- collaboration is fragile
-- CI cannot safely become the main place for infrastructure change yet
-- EKS would add too much complexity on top of a weak state model
+- the bootstrap layer still needs to be handled carefully
+- Terraform quality checks are not yet part of CI
+- plan visibility is not yet part of the normal review flow
+- apply policy is still informal
+- EKS would still add too much complexity if Terraform process discipline does not improve further
 
 This is why Terraform maturity is now the right next initiative.
 
@@ -310,7 +330,7 @@ Still missing:
 - more domain slices such as listings, users, and showing slots
 - worker service behavior
 - frontend implementation
-- production-shaped Terraform backend and Terraform CI discipline
+- broader Terraform CI discipline and apply policy
 - Kubernetes deployment artifacts
 - EKS infrastructure
 - broader observability

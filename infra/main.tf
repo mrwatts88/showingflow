@@ -1,4 +1,11 @@
 terraform {
+  backend "s3" {
+    bucket       = "showingflow-terraform-state-409415529879-us-east-2"
+    key          = "infra/terraform.tfstate"
+    region       = "us-east-2"
+    use_lockfile = true
+  }
+
   required_providers {
     aws = {
       source = "hashicorp/aws"

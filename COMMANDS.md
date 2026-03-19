@@ -194,6 +194,24 @@ Initialize Terraform:
 terraform init
 ```
 
+Initialize the bootstrap Terraform for the state bucket:
+
+```bash
+terraform -chdir=bootstrap init
+```
+
+Create the S3 bucket used for remote Terraform state:
+
+```bash
+terraform -chdir=bootstrap apply
+```
+
+Migrate the main infra state into the S3 backend:
+
+```bash
+terraform init -migrate-state -force-copy
+```
+
 Preview the ECR repository creation:
 
 ```bash
@@ -217,6 +235,13 @@ Apply the GitHub Actions OIDC provider and ECR push role:
 ```bash
 terraform apply
 ```
+
+Current backend model:
+
+- `infra/bootstrap` manages the S3 state bucket
+- `infra` uses the S3 backend at `showingflow-terraform-state-409415529879-us-east-2`
+- the main infra state key is `infra/terraform.tfstate`
+- backend locking is enabled with `use_lockfile = true`
 
 ## Amazon ECR
 

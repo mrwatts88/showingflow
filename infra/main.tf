@@ -131,7 +131,8 @@ data "aws_iam_policy_document" "github_actions_terraform_plan" {
   statement {
     effect = "Allow"
     actions = [
-      "ecr:DescribeRepositories"
+      "ecr:DescribeRepositories",
+      "ecr:ListTagsForResource"
     ]
     resources = [aws_ecr_repository.showingflow_api.arn]
   }
@@ -149,6 +150,7 @@ data "aws_iam_policy_document" "github_actions_terraform_plan" {
     actions = [
       "iam:GetRole",
       "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
       "iam:ListRolePolicies"
     ]
     resources = [

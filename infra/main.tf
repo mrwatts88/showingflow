@@ -99,3 +99,67 @@ resource "aws_iam_role_policy" "github_actions_ecr_push" {
   role   = aws_iam_role.github_actions_ecr_push.id
   policy = data.aws_iam_policy_document.github_actions_ecr_push.json
 }
+
+resource "aws_iam_role" "github_actions_terraform_plan" {
+  name               = "github-actions-showingflow-terraform-plan"
+  assume_role_policy = data.aws_iam_policy_document.github_actions_assume_role.json
+}
+
+data "aws_iam_policy_document" "github_actions_terraform_plan" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket"
+    ]
+    resources = [
+      "arn:aws:s3:::showingflow-terraform-state-409415529879-us-east-2"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+    resources = [
+      "arn:aws:s3:::showingflow-terraform-state-409415529879-us-east-2/infra/*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:DescribeRepositories"
+    ]
+    resources = [aws_ecr_repository.showingflow_api.arn]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:GetOpenIDConnectProvider"
+    ]
+    resources = [aws_iam_openid_connect_provider.github_actions.arn]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:ListRolePolicies"
+    ]
+    resources = [
+      aws_iam_role.github_actions_ecr_push.arn,
+      aws_iam_role.github_actions_terraform_plan.arn
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "github_actions_terraform_plan" {
+  name   = "github-actions-showingflow-terraform-plan"
+  role   = aws_iam_role.github_actions_terraform_plan.id
+  policy = data.aws_iam_policy_document.github_actions_terraform_plan.json
+}

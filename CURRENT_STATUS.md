@@ -23,6 +23,9 @@ This is not yet a scalable system in the operational sense, but the project has 
 - The GitHub Actions workflow now includes OIDC-based AWS auth and commit-SHA plus `latest` image push logic for `main`.
 - The GitHub Actions workflow has now successfully published an API image to ECR.
 - The main Terraform infrastructure state now uses an S3 remote backend with lockfile-based locking.
+- A dedicated GitHub Actions IAM role for CI planning of the main infrastructure root now exists in AWS.
+- The repository now has a dedicated Terraform GitHub Actions workflow for `fmt`, `validate`, and `plan`.
+- That Terraform workflow now exists in code, but it has not yet been observed running in GitHub.
 
 ### Main API Service
 
@@ -47,6 +50,7 @@ The `services/showingflow-api` service has a credible production baseline for an
 - CI workflow logic now exists for ECR login and commit-SHA plus `latest` image push on `main`
 - End-to-end CI image publishing to ECR has been verified
 - Terraform state has been migrated from local state to an S3 backend for the main infra config
+- Terraform CI discipline has started through a dedicated workflow for `fmt`, `validate`, and `plan`
 
 ### Database and Schema Management
 
@@ -125,7 +129,6 @@ Not yet implemented:
 - frontend application work
 - Kubernetes deployment manifests/charts
 - broader Terraform-managed AWS infrastructure beyond the initial ECR and GitHub OIDC slices
-- Terraform CI checks such as `fmt`, `validate`, and `plan`
 - a deliberate Terraform apply policy and guardrails
 - OpenTelemetry instrumentation and broader observability
 - structured logging and request correlation conventions
@@ -147,5 +150,7 @@ The important thing is not that there is a lot of code; it is that the existing 
 - the AWS trust path for CI is now defined through Terraform-managed GitHub OIDC and an ECR push role
 - the workflow logic for automated publish now exists and has been proven end to end in GitHub
 - the main Terraform state is no longer local-only, which is the right prerequisite for stronger infrastructure discipline
+- the next layer of Terraform discipline now exists through CI formatting, validation, and planning workflow logic
+- the immediate next checkpoint is to verify that Terraform workflow in GitHub and then define a clear `apply` policy
 
-The next major step should continue moving outward from application code and toward delivery and operations, but the priority should now be Terraform CI discipline rather than Kubernetes artifacts. The main state backend is now in place, so the next moves are CI checks such as `fmt`, `validate`, and `plan`, plus a deliberate policy for when `apply` is allowed. After that, the natural next layer is Kubernetes deployment and EKS automation.
+The next major step should continue moving outward from application code and toward delivery and operations, but the priority should now be verifying the new Terraform CI workflow and then defining a deliberate policy for when `apply` is allowed. After that, the natural next layer is Kubernetes deployment and EKS automation.

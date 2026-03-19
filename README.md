@@ -160,11 +160,16 @@ The project now has the first pieces of a real deployment path:
 - the API and PostgreSQL run together in Docker Compose
 - Terraform creates an Amazon ECR repository for the API image
 - a manual image push from Docker to ECR has been completed successfully
+- GitHub Actions runs API tests and image builds
+- on `push` to `main`, GitHub Actions authenticates to AWS through OIDC and pushes commit-SHA plus `latest` image tags to ECR
+- the main Terraform root uses an S3 remote backend with lockfile-based locking
+- a dedicated Terraform CI workflow now exists for `fmt`, `validate`, and `plan`
 
 What does not exist yet:
 
-- GitHub Actions pipelines
-- automated image push to ECR
+- verified Terraform planning in GitHub Actions
+- a defined Terraform `apply` policy and guardrails
+- Kubernetes deployment manifests or Helm packaging
 - EKS infrastructure
 - automated deployment to Kubernetes
 

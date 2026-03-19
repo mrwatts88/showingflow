@@ -1,0 +1,68 @@
+name: Terraform CI
+
+on:
+  push:
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform-ci.yml"
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform-ci.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-2
+
+jobs:
+  fmt-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive infra
+
+      - name: Initialize bootstrap Terraform without backend
+        run: terraform -chdir=infra/bootstrap init -backend=false -input=false
+
+      - name: Validate bootstrap Terraform
+        run: terraform -chdir=infra/bootstrap validate
+
+      - name: Initialize main Terraform without backend
+        run: terraform -chdir=infra init -backend=false -input=false
+
+      - name: Validate main Terraform
+        run: terraform -chdir=infra validate
+
+  plan:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: fmt-validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::409415529879:role/github-actions-showingflow-terraform-plan
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Initialize main Terraform
+        run: terraform -chdir=infra init -input=false
+
+      - name: Run Terraform plan
+        run: terraform -chdir=infra plan -input=false -no-color

@@ -126,6 +126,11 @@ Current workflow:
   - logs in to ECR
   - tags the image with the short Git commit SHA and `latest`
   - pushes both tags to ECR
+- `.github/workflows/terraform-ci.yml` runs Terraform formatting and validation for `infra` and `infra/bootstrap`.
+- On `push` to `main`, the Terraform workflow also:
+  - assumes a Terraform plan role through OIDC
+  - initializes the remote backend for `infra`
+  - runs `terraform plan`
 
 ## API Checks
 

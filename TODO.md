@@ -6,10 +6,10 @@ Current checkpoint: add Terraform CI discipline now that the main infra state us
 
 ## Terraform CI Discipline
 
-- Add GitHub Actions checks for `terraform fmt`.
-- Add GitHub Actions checks for `terraform validate`.
-- Add GitHub Actions checks for `terraform plan`.
-- Use OIDC for Terraform CI access as well, not static AWS secrets.
+- Verify GitHub Actions checks for `terraform fmt`.
+- Verify GitHub Actions checks for `terraform validate`.
+- Verify GitHub Actions checks for `terraform plan`.
+- Verify the Terraform CI role can access the remote backend and AWS resources as expected.
 
 ## Apply Policy
 
@@ -24,6 +24,6 @@ Current checkpoint: add Terraform CI discipline now that the main infra state us
 
 ## Follow-Through After Terraform Is Production-Shaped
 
-- Update docs with the exact Terraform backend and CI workflow.
+- Keep the docs current once the Terraform workflow has been verified in GitHub.
 - Then decide whether the next step is Kubernetes manifests, Helm, or direct EKS scaffolding.
 - Revisit whether a remote backend strategy is sufficient before creating EKS resources.

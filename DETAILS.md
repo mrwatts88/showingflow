@@ -261,6 +261,11 @@ Why this matters:
 
 This is a much better security posture than the older secret-key pattern.
 
+That same pattern is now used for two separate CI concerns:
+
+- image publishing to ECR
+- Terraform planning for the main infrastructure root
+
 ## What Terraform Is Doing Today
 
 Terraform currently manages the first AWS slices:
@@ -295,12 +300,20 @@ However, Terraform is still not fully production-shaped yet.
 That means:
 
 - the bootstrap layer still needs to be handled carefully
-- Terraform quality checks are not yet part of CI
-- plan visibility is not yet part of the normal review flow
+- the Terraform CI workflow exists, but it has not yet been observed running in GitHub
+- plan visibility is still limited because the current plan job only runs on `push` to `main`
 - apply policy is still informal
 - EKS would still add too much complexity if Terraform process discipline does not improve further
 
 This is why Terraform maturity is now the right next initiative.
+
+The next layer of maturity has now started as well:
+
+- GitHub Actions has a dedicated Terraform workflow
+- Terraform formatting and validation can run in CI
+- the main `infra` root can run `terraform plan` in CI using a dedicated OIDC-backed IAM role
+
+This is the right sequence. First get shared state. Then get CI visibility and safety checks. Only after that consider stronger automation such as CI-driven apply.
 
 ## Why Terraform Maturity Comes Before EKS
 
@@ -330,7 +343,7 @@ Still missing:
 - more domain slices such as listings, users, and showing slots
 - worker service behavior
 - frontend implementation
-- broader Terraform CI discipline and apply policy
+- verified Terraform planning in GitHub and a deliberate apply policy
 - Kubernetes deployment artifacts
 - EKS infrastructure
 - broader observability

@@ -300,7 +300,7 @@ However, Terraform is still not fully production-shaped yet.
 That means:
 
 - the bootstrap layer still needs to be handled carefully
-- the Terraform CI workflow exists, but it has not yet been observed running in GitHub
+- the Terraform CI workflow is now verified in GitHub for `fmt`, `validate`, and `plan`
 - plan visibility is still limited because the current plan job only runs on `push` to `main`
 - apply policy is still informal
 - EKS would still add too much complexity if Terraform process discipline does not improve further
@@ -312,6 +312,7 @@ The next layer of maturity has now started as well:
 - GitHub Actions has a dedicated Terraform workflow
 - Terraform formatting and validation can run in CI
 - the main `infra` root can run `terraform plan` in CI using a dedicated OIDC-backed IAM role
+- the Terraform plan role now includes the extra read permissions Terraform needed during resource refresh, including ECR tag reads and IAM attached-policy listing
 
 This is the right sequence. First get shared state. Then get CI visibility and safety checks. Only after that consider stronger automation such as CI-driven apply.
 
@@ -324,6 +325,7 @@ Before EKS work grows, Terraform should become more production-ready:
 - remote backend for shared durable state
 - CI checks such as `fmt`, `validate`, and `plan`
 - a deliberate policy for when `terraform apply` is allowed
+- basic billing safeguards so cost surprises are caught early
 
 Why that matters:
 
@@ -331,6 +333,7 @@ Why that matters:
 - shared state becomes the source of truth instead of one laptop
 - infra plans become reviewable
 - risky automation can be gated properly before the AWS footprint gets larger
+- EKS introduces a more expensive cost surface than the current ECR-focused setup, so budgets and anomaly alerts should exist before cluster work begins
 
 This is the right “next layer of seriousness” for the project.
 
@@ -343,7 +346,8 @@ Still missing:
 - more domain slices such as listings, users, and showing slots
 - worker service behavior
 - frontend implementation
-- verified Terraform planning in GitHub and a deliberate apply policy
+- a deliberate Terraform apply policy
+- billing guardrails for the AWS account before EKS
 - Kubernetes deployment artifacts
 - EKS infrastructure
 - broader observability

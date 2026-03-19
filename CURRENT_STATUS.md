@@ -25,7 +25,8 @@ This is not yet a scalable system in the operational sense, but the project has 
 - The main Terraform infrastructure state now uses an S3 remote backend with lockfile-based locking.
 - A dedicated GitHub Actions IAM role for CI planning of the main infrastructure root now exists in AWS.
 - The repository now has a dedicated Terraform GitHub Actions workflow for `fmt`, `validate`, and `plan`.
-- That Terraform workflow now exists in code, but it has not yet been observed running in GitHub.
+- The Terraform plan role was updated to allow the additional read operations Terraform needed during CI refresh.
+- That Terraform workflow has now been observed succeeding in GitHub.
 
 ### Main API Service
 
@@ -130,6 +131,7 @@ Not yet implemented:
 - Kubernetes deployment manifests/charts
 - broader Terraform-managed AWS infrastructure beyond the initial ECR and GitHub OIDC slices
 - a deliberate Terraform apply policy and guardrails
+- billing safeguards for the AWS account before EKS-scale infrastructure
 - OpenTelemetry instrumentation and broader observability
 - structured logging and request correlation conventions
 - broader test coverage strategy beyond the first vertical slice
@@ -151,6 +153,6 @@ The important thing is not that there is a lot of code; it is that the existing 
 - the workflow logic for automated publish now exists and has been proven end to end in GitHub
 - the main Terraform state is no longer local-only, which is the right prerequisite for stronger infrastructure discipline
 - the next layer of Terraform discipline now exists through CI formatting, validation, and planning workflow logic
-- the immediate next checkpoint is to verify that Terraform workflow in GitHub and then define a clear `apply` policy
+- the immediate next checkpoint is to define a clear `apply` policy and put billing safeguards in place before EKS
 
-The next major step should continue moving outward from application code and toward delivery and operations, but the priority should now be verifying the new Terraform CI workflow and then defining a deliberate policy for when `apply` is allowed. After that, the natural next layer is Kubernetes deployment and EKS automation.
+The next major step should continue moving outward from application code and toward delivery and operations, but the priority should now be defining a deliberate policy for when `apply` is allowed and adding billing safeguards before EKS. After that, the natural next layer is Kubernetes deployment and EKS automation.

@@ -19,6 +19,8 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Updated the workflow to also tag and push `latest` on `main`.
 - Created a bootstrap Terraform config for the remote state bucket and migrated the main infra state to an S3 backend with lockfile-based locking.
 - Added a dedicated Terraform GitHub Actions workflow and Terraform CI IAM role for `fmt`, `validate`, and `plan`.
+- Fixed the Terraform CI role policy after the first workflow run exposed missing refresh permissions for ECR tag reads and IAM attached-policy listing.
+- Verified in GitHub that the Terraform CI workflow now succeeds for `fmt`, `validate`, and `plan`.
 
 ## Current Verified State
 
@@ -54,6 +56,10 @@ This file is the live handoff for the next session. It should be updated wheneve
 - The repository now contains `.github/workflows/terraform-ci.yml`.
 - The dedicated Terraform CI role exists in AWS:
   - `github-actions-showingflow-terraform-plan`
+- The Terraform CI workflow has been observed succeeding in GitHub Actions for:
+  - `terraform fmt`
+  - `terraform validate`
+  - `terraform plan`
 - The workflow is now configured to:
   - request `id-token: write`
   - assume `github-actions-showingflow-ecr-push`
@@ -64,8 +70,8 @@ This file is the live handoff for the next session. It should be updated wheneve
 
 ## Recommended Next Tasks
 
-1. Push the Terraform workflow and verify `fmt`, `validate`, and `plan` succeed in GitHub Actions.
-2. Decide the policy for Terraform `apply`: manual only for now, or gated CI apply after plan flows are stable.
+1. Decide the policy for Terraform `apply`: manual only for now, or gated CI apply after plan flows are stable.
+2. Add billing safeguards before EKS work, starting with budgets and anomaly alerts.
 3. Decide whether the bootstrap state bucket config should remain a separate local-state bootstrap layer or evolve into a longer-term pattern.
 
 ## Risks And Gaps
@@ -74,7 +80,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 - CI now includes a proven ECR publish path, but deployment beyond image publishing does not exist yet.
 - The new `latest` tag behavior has not yet been re-verified in GitHub from this session.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
-- The new Terraform CI workflow and plan role have not yet been observed running in GitHub from this session.
+- Billing safeguards are not yet in place for the AWS account.
 - EKS work would still be premature until Terraform checks and apply policy are stronger.
 
 ## Resume Commands
@@ -176,7 +182,9 @@ Terraform CI workflow:
 - The remote state bucket was created successfully in S3.
 - `terraform init -migrate-state -force-copy` succeeded for the main infra config.
 - `terraform -chdir=infra plan` returned `No changes` after migration, confirming the remote backend is working.
-- The Terraform CI workflow was added in code and the Terraform CI IAM role was applied in AWS, but the workflow has not yet been executed and observed in GitHub from this session.
+- The Terraform CI workflow was added in code and the Terraform CI IAM role was applied in AWS.
+- The first GitHub run exposed missing read permissions for Terraform refresh, and the plan role policy was updated in AWS to add `ecr:ListTagsForResource` and `iam:ListAttachedRolePolicies`.
+- The Terraform workflow rerun was observed succeeding in GitHub for `fmt`, `validate`, and `plan`.
 
 ## Next Initiative
 
@@ -184,7 +192,7 @@ The next initiative is not Kubernetes first.
 
 The next initiative is to finish making Terraform production-shaped:
 
-- verify CI checks for Terraform quality and plan visibility
 - define clear policy for when and how `terraform apply` is allowed
+- add billing safeguards before EKS increases the AWS cost surface
 
-The backend piece is now in place for the main infra config. The next priority is verifying the workflow and then setting apply policy before substantial EKS work.
+The backend piece is now in place for the main infra config. The next priority is setting apply policy and billing guardrails before substantial EKS work.

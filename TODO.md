@@ -2,20 +2,20 @@
 
 This file tracks unfinished work for the current checkpoint only.
 
-Current checkpoint: add Terraform CI discipline now that the main infra state uses a remote backend.
-
-## Terraform CI Discipline
-
-- Verify GitHub Actions checks for `terraform fmt`.
-- Verify GitHub Actions checks for `terraform validate`.
-- Verify GitHub Actions checks for `terraform plan`.
-- Verify the Terraform CI role can access the remote backend and AWS resources as expected.
+Current checkpoint: define Terraform apply policy and add billing safeguards before EKS work.
 
 ## Apply Policy
 
 - Decide whether Terraform `apply` remains manual for now.
 - If `apply` moves toward CI later, define the guardrails first.
 - Decide what branch or environment protections are required before CI-driven apply.
+
+## Billing Guardrails
+
+- Add at least one monthly AWS Budget with alert thresholds.
+- Add a forecasted budget alert so spend is flagged before the monthly limit is crossed.
+- Add AWS Cost Anomaly Detection alerts for unusual spend.
+- Document the chosen billing guardrails once they exist.
 
 ## Backend Follow-Through
 

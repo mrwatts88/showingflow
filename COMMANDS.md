@@ -248,6 +248,14 @@ Current backend model:
 - the main infra state key is `infra/terraform.tfstate`
 - backend locking is enabled with `use_lockfile = true`
 
+Current apply policy:
+
+- `terraform apply` is manual-only for now
+- apply only from a trusted local machine, not from GitHub Actions
+- apply only after reviewing a fresh `terraform plan`
+- apply only after the latest Terraform CI run on `main` is green
+- if the infra change is significant, verify billing guardrails before applying
+
 ## Amazon ECR
 
 Authenticate Docker to ECR:

@@ -2,13 +2,13 @@
 
 This file tracks unfinished work for the current checkpoint only.
 
-Current checkpoint: define Terraform apply policy now that billing safeguards are in place before EKS work.
+Current checkpoint: keep the manual Terraform apply policy disciplined while planning the first EKS-facing infrastructure slice.
 
 ## Apply Policy
 
-- Decide whether Terraform `apply` remains manual for now.
+- Keep `terraform apply` manual-only for now.
 - If `apply` moves toward CI later, define the guardrails first.
-- Decide what branch or environment protections are required before CI-driven apply.
+- Require branch/environment protections before CI-driven apply is even considered.
 
 ## Billing Guardrails
 
@@ -20,6 +20,11 @@ Current checkpoint: define Terraform apply policy now that billing safeguards ar
 
 - Decide whether the bootstrap state bucket config should remain a separate local-state layer.
 - Decide whether the backend bucket needs additional hardening beyond versioning, encryption, and public-access blocking.
+
+## EKS Direction
+
+- Decide what the first EKS-facing Terraform slice should be.
+- Keep that first slice small enough that manual reviewed apply remains practical.
 
 ## Follow-Through After Terraform Is Production-Shaped
 

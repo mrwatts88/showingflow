@@ -23,6 +23,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Verified in GitHub that the Terraform CI workflow now succeeds for `fmt`, `validate`, and `plan`.
 - Applied a monthly AWS Budget for billing alerts.
 - Enabled Cost Explorer, removed the AWS-created default anomaly resources, and applied the Terraform-managed anomaly monitor and anomaly subscription successfully.
+- Defined the Terraform apply policy as manual-only for the current phase of the project.
 
 ## Current Verified State
 
@@ -81,9 +82,9 @@ This file is the live handoff for the next session. It should be updated wheneve
 
 ## Recommended Next Tasks
 
-1. Decide the policy for Terraform `apply`: manual only for now, or gated CI apply after plan flows are stable.
-2. Decide whether the bootstrap state bucket config should remain a separate local-state bootstrap layer or evolve into a longer-term pattern.
-3. Decide what the first EKS-facing Terraform slice should be after apply policy is settled.
+1. Decide whether the bootstrap state bucket config should remain a separate local-state bootstrap layer or evolve into a longer-term pattern.
+2. Decide what the first EKS-facing Terraform slice should be.
+3. Revisit CI-driven Terraform apply only after environment protections and approval gates exist.
 
 ## Risks And Gaps
 
@@ -91,6 +92,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 - CI now includes a proven ECR publish path, but deployment beyond image publishing does not exist yet.
 - The new `latest` tag behavior has not yet been re-verified in GitHub from this session.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
+- Terraform apply is intentionally manual-only, so infrastructure changes still depend on local operator discipline.
 - EKS work would still be premature until Terraform checks and apply policy are stronger.
 
 ## Resume Commands
@@ -207,7 +209,7 @@ The next initiative is not Kubernetes first.
 
 The next initiative is to finish making Terraform production-shaped:
 
-- define clear policy for when and how `terraform apply` is allowed
 - keep billing safeguards in place as EKS increases the AWS cost surface
+- keep the manual apply policy disciplined until stronger deployment guardrails exist
 
-The backend piece and the basic billing guardrails are now in place for the main infra config. The next priority is setting apply policy before substantial EKS work.
+The backend piece, the basic billing guardrails, and the current apply policy are now in place for the main infra config. The next priority is deciding the first EKS-facing slice without weakening the current Terraform discipline.

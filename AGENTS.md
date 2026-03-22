@@ -55,6 +55,9 @@ Each session should leave behind a clear handoff for the next session or next ag
 - Prefer environment-driven configuration over hardcoded environment-specific values.
 - Prefer realistic integration tests over mock-heavy early testing.
 - Prefer updating an existing document over creating overlapping duplicate docs.
+- Respect the current Terraform apply policy:
+  - `terraform apply` is manual only for now
+  - do not add CI-driven apply without explicitly updating the documented policy and guardrails
 
 ## Session Closeout
 

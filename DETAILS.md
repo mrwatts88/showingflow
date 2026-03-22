@@ -302,7 +302,7 @@ That means:
 - the bootstrap layer still needs to be handled carefully
 - the Terraform CI workflow is now verified in GitHub for `fmt`, `validate`, and `plan`
 - plan visibility is still limited because the current plan job only runs on `push` to `main`
-- apply policy is still informal
+- apply is now manual-only by policy, but stronger guardrails do not exist yet
 - EKS would still add too much complexity if Terraform process discipline does not improve further
 
 This is why Terraform maturity is now the right next initiative.
@@ -315,6 +315,31 @@ The next layer of maturity has now started as well:
 - the Terraform plan role now includes the extra read permissions Terraform needed during resource refresh, including ECR tag reads and IAM attached-policy listing
 
 This is the right sequence. First get shared state. Then get CI visibility and safety checks. Only after that consider stronger automation such as CI-driven apply.
+
+## Terraform Apply Policy
+
+The current Terraform apply policy is intentionally conservative.
+
+For now:
+
+- `terraform apply` is manual only
+- it should be run from a trusted local machine
+- it should target the `main` branch state, not an arbitrary local divergence
+- it should happen only after a fresh `terraform plan` has been reviewed
+- it should happen only after the latest Terraform CI run is green
+
+Why this is the current policy:
+
+- the project now has remote state and CI planning, which is enough to make manual apply disciplined
+- it does not yet have GitHub environment protections, approval gates, or a mature release process for infrastructure mutation
+- EKS would add enough cost and blast radius that CI-driven apply would be premature right now
+
+This is a normal intermediate stage for a production-shaped system:
+
+- shared remote state
+- CI `fmt`, `validate`, and `plan`
+- manual reviewed apply
+- only later, if needed, gated CI apply
 
 ## Billing Guardrails
 

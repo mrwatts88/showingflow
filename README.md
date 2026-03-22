@@ -167,10 +167,10 @@ The project now has the first pieces of a real deployment path:
 - the Terraform plan role was tightened to allow the read operations Terraform needs during CI refresh
 - Terraform `fmt`, `validate`, and `plan` have now been verified in GitHub Actions
 - billing guardrails now exist in AWS through Terraform-managed budget and anomaly alert resources
+- Terraform `apply` remains manual-only for now
 
 What does not exist yet:
 
-- a defined Terraform `apply` policy and guardrails
 - Kubernetes deployment manifests or Helm packaging
 - EKS infrastructure
 - automated deployment to Kubernetes

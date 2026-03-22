@@ -20,6 +20,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Created a bootstrap Terraform config for the remote state bucket and migrated the main infra state to an S3 backend with lockfile-based locking.
 - Added a dedicated Terraform GitHub Actions workflow and Terraform CI IAM role for `fmt`, `validate`, and `plan`.
 - Fixed the Terraform CI role policy after the first workflow run exposed missing refresh permissions for ECR tag reads and IAM attached-policy listing.
+- Fixed the Terraform CI role policy again after a later workflow run exposed missing Cost Explorer anomaly read permissions.
 - Verified in GitHub that the Terraform CI workflow now succeeds for `fmt`, `validate`, and `plan`.
 - Applied a monthly AWS Budget for billing alerts.
 - Enabled Cost Explorer, removed the AWS-created default anomaly resources, and applied the Terraform-managed anomaly monitor and anomaly subscription successfully.
@@ -101,9 +102,9 @@ This file is the live handoff for the next session. It should be updated wheneve
 
 ## Recommended Next Tasks
 
-1. Decide whether to keep the current public-only EKS network shape or harden it with private worker subnets and tighter control-plane access.
-2. Replace the in-cluster ephemeral PostgreSQL setup with a more durable database strategy.
-3. Stop deploying the API with the floating `latest` tag and move the Kubernetes workload toward an explicit image versioning approach.
+1. Create a top-level `Makefile` that gathers the real day-to-day commands for local development, infrastructure, Kubernetes, and verification into one operator entry point.
+2. Review the current EKS and Kubernetes setup in detail and document the important moving parts so the system can be explained and reasoned about at a senior level.
+3. Only after that review, decide which hardening change should come first: network shape, database durability, or image pinning.
 
 ## Risks And Gaps
 
@@ -245,6 +246,7 @@ Terraform CI workflow:
 - The Terraform CI workflow was added in code and the Terraform CI IAM role was applied in AWS.
 - The first GitHub run exposed missing read permissions for Terraform refresh, and the plan role policy was updated in AWS to add `ecr:ListTagsForResource` and `iam:ListAttachedRolePolicies`.
 - The Terraform workflow rerun was observed succeeding in GitHub for `fmt`, `validate`, and `plan`.
+- A later CI refresh failure exposed missing Cost Explorer read permissions, and the plan role policy was updated in AWS to add `ce:GetAnomalyMonitors` and `ce:GetAnomalySubscriptions`.
 - `terraform -chdir=infra validate` succeeded for the billing-guardrail changes.
 - `terraform -chdir=infra plan` showed three new billing resources: one budget, one anomaly monitor, and one anomaly subscription.
 - `terraform -chdir=infra apply -auto-approve` created the budget successfully.
@@ -262,12 +264,12 @@ Terraform CI workflow:
 
 ## Next Initiative
 
-The next initiative is to improve the quality of the running EKS slice without losing the small working system.
+The next initiative is to make the current system easier to operate and better understood before changing its shape again.
 
 The most valuable follow-through now is:
 
-- harden the network shape
-- move the database to a more durable setup
-- stop relying on the floating `latest` tag in Kubernetes
+- add a top-level `Makefile` for the real operator and development commands
+- study the current EKS and Kubernetes setup until each piece is understood clearly at a senior level
+- then choose the next hardening step from a position of understanding rather than guesswork
 
-The important shift is that EKS is no longer hypothetical. The cluster and public service already work. The next work is refinement and hardening.
+The important shift is that EKS is no longer hypothetical. The cluster and public service already work. The next session should focus first on operability and understanding, then on refinement and hardening.

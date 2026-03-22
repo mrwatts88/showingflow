@@ -143,6 +143,18 @@ data "aws_iam_policy_document" "github_actions_terraform_plan" {
   statement {
     effect = "Allow"
     actions = [
+      "ce:GetAnomalyMonitors",
+      "ce:GetAnomalySubscriptions"
+    ]
+    resources = [
+      aws_ce_anomaly_monitor.services.arn,
+      aws_ce_anomaly_subscription.daily_email.arn
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
       "iam:GetOpenIDConnectProvider"
     ]
     resources = [aws_iam_openid_connect_provider.github_actions.arn]

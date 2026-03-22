@@ -26,6 +26,7 @@ This is not yet a scalable system in the operational sense, but the project has 
 - A dedicated GitHub Actions IAM role for CI planning of the main infrastructure root now exists in AWS.
 - The repository now has a dedicated Terraform GitHub Actions workflow for `fmt`, `validate`, and `plan`.
 - The Terraform plan role was updated to allow the additional read operations Terraform needed during CI refresh.
+- The Terraform plan role was later expanded again to allow Cost Explorer anomaly-monitor and anomaly-subscription reads during CI refresh.
 - That Terraform workflow has now been observed succeeding in GitHub.
 - Billing guardrails are now live in AWS through Terraform.
 - A monthly AWS Budget now exists for the account.

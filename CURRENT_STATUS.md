@@ -31,6 +31,12 @@ This is not yet a scalable system in the operational sense, but the project has 
 - A monthly AWS Budget now exists for the account.
 - A Terraform-managed Cost Anomaly Detection monitor and daily anomaly email subscription now exist for the account.
 - Terraform apply policy is now defined as manual-only for the current stage of the project.
+- A minimal EKS runtime now exists in AWS.
+- Terraform now manages a VPC, subnets, IAM roles, an EKS cluster, a managed node group, and local cluster access.
+- The cluster currently has one worker node and is reachable from local `kubectl`.
+- A Kubernetes manifest now runs PostgreSQL plus the API in the cluster.
+- The API is exposed through a public Kubernetes `LoadBalancer` service.
+- The public endpoint has been verified with a real brokerage create request.
 
 ### Main API Service
 
@@ -56,6 +62,32 @@ The `services/showingflow-api` service has a credible production baseline for an
 - End-to-end CI image publishing to ECR has been verified
 - Terraform state has been migrated from local state to an S3 backend for the main infra config
 - Terraform CI discipline has started through a dedicated workflow for `fmt`, `validate`, and `plan`
+- Terraform now also defines and applies a minimal EKS stack
+- The API can now run inside EKS using the same image that CI publishes to ECR
+
+### Kubernetes And EKS Runtime
+
+The first EKS slice is intentionally small but real:
+
+- cluster name `showingflow-eks`
+- one managed node group `showingflow-general`
+- desired worker count `1`
+- public AWS load balancer for the API
+- local IAM user access through EKS access entries and policy association
+
+Workload shape currently running in the cluster:
+
+- namespace `showingflow`
+- one PostgreSQL pod exposed internally as `postgres`
+- one API pod exposed publicly as `showingflow-api`
+
+This is enough to prove:
+
+- Terraform can create the cluster and its AWS dependencies
+- `aws eks update-kubeconfig` gives the local machine working cluster access
+- the EKS worker can pull the API image from ECR
+- the API can talk to PostgreSQL inside the cluster
+- the public load balancer can serve a real API request
 
 ### Database and Schema Management
 
@@ -132,12 +164,13 @@ Not yet implemented:
 - additional domain slices such as users, listings, showing slots, and showing requests
 - worker service behavior and event-driven workflows
 - frontend application work
-- Kubernetes deployment manifests/charts
-- broader Terraform-managed AWS infrastructure beyond the initial ECR and GitHub OIDC slices
+- Helm packaging or a more mature deployment packaging strategy
+- a durable cloud database setup
 - stronger Terraform apply guardrails beyond the current manual-only policy
 - OpenTelemetry instrumentation and broader observability
 - structured logging and request correlation conventions
 - broader test coverage strategy beyond the first vertical slice
+- hardened EKS networking and access restrictions
 
 ## Assessment
 
@@ -156,6 +189,7 @@ The important thing is not that there is a lot of code; it is that the existing 
 - the workflow logic for automated publish now exists and has been proven end to end in GitHub
 - the main Terraform state is no longer local-only, which is the right prerequisite for stronger infrastructure discipline
 - the next layer of Terraform discipline now exists through CI formatting, validation, and planning workflow logic
-- the immediate next checkpoint is to keep that manual apply policy disciplined while deciding the first EKS-facing infrastructure slice
+- the first EKS-facing slice is now proven end to end
+- the immediate next checkpoint is to harden that cluster shape without losing the working public runtime
 
-The next major step should continue moving outward from application code and toward delivery and operations, but the priority should now be planning the first EKS-facing infrastructure slice while keeping apply manual and reviewed. After that, the natural next layer is Kubernetes deployment and EKS automation.
+The next major step should keep moving outward from application code and toward delivery and operations, but the priority is no longer “can EKS work at all.” The priority is improving the quality of the running Kubernetes shape: network hardening, durable data, better image pinning, and a cleaner deployment model while keeping the current manual reviewed Terraform apply policy.

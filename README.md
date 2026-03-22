@@ -168,12 +168,20 @@ The project now has the first pieces of a real deployment path:
 - Terraform `fmt`, `validate`, and `plan` have now been verified in GitHub Actions
 - billing guardrails now exist in AWS through Terraform-managed budget and anomaly alert resources
 - Terraform `apply` remains manual-only for now
+- a minimal Amazon EKS cluster now exists in `us-east-2`
+- the cluster has one managed node group with one worker node
+- local `kubectl` access is configured through `aws eks update-kubeconfig`
+- Kubernetes manifests now exist under `infra/k8s`
+- the API and a demo PostgreSQL instance are now running in the cluster
+- the API is exposed through a Kubernetes `LoadBalancer` service
+- the public load balancer endpoint has been verified with a real `POST /brokerages` request
 
 What does not exist yet:
 
-- Kubernetes deployment manifests or Helm packaging
-- EKS infrastructure
+- Helm packaging
 - automated deployment to Kubernetes
+- a production-grade Kubernetes data layer
+- hardened EKS networking and access controls
 
 ## Future Work
 
@@ -185,7 +193,7 @@ Planned areas of expansion include:
 - email/SMS notifications
 - audit and activity history
 - automated container publishing and deployment
-- Kubernetes infrastructure
+- EKS hardening and deployment refinement
 - distributed tracing and metrics
 
 ## Purpose

@@ -14,6 +14,8 @@ Today, the project already proves several important things:
 - the API image can be built locally and in GitHub Actions
 - the image can be pushed to Amazon ECR manually and from CI
 - GitHub Actions can authenticate to AWS through OIDC instead of long-lived AWS keys
+- a real EKS cluster can run the API behind a public AWS load balancer
+- local `kubectl` access to that cluster works
 
 That is a strong early foundation. It means the project is no longer just application code. It has the beginnings of real runtime, packaging, and cloud delivery discipline.
 
@@ -27,7 +29,7 @@ The long-term target is a small but complete production-style platform with:
 - AWS-managed infrastructure
 - CI/CD automation
 - observability
-- eventually Kubernetes and EKS
+- a more mature Kubernetes runtime
 
 The project is not there yet. The important point is that the path toward that shape is already visible in the codebase and docs.
 
@@ -43,6 +45,8 @@ The important directories today are:
   Local Docker Compose runtime for PostgreSQL and the API
 - `infra`
   Terraform infrastructure definitions
+- `infra/k8s`
+  Kubernetes manifests for the current demo workload
 - `.github/workflows`
   GitHub Actions workflows
 
@@ -266,6 +270,87 @@ That same pattern is now used for two separate CI concerns:
 - image publishing to ECR
 - Terraform planning for the main infrastructure root
 
+## What EKS Is Doing Today
+
+The project now has its first live Kubernetes runtime in AWS.
+
+Terraform currently creates:
+
+- a dedicated VPC for EKS
+- two public subnets
+- an internet gateway and public routing
+- an EKS control plane
+- one managed node group
+- an EKS access entry that gives the local IAM user cluster-admin access
+
+The current cluster is intentionally small:
+
+- cluster name: `showingflow-eks`
+- one node group: `showingflow-general`
+- exactly one worker node
+- worker instance type: `t3.small`
+
+This was a deliberate tradeoff. The goal was to prove the end-to-end Kubernetes path with the smallest practical AWS footprint, not to jump straight to a hardened production topology.
+
+## How Local kubectl Access Works
+
+The cluster does not rely on the old `aws-auth` ConfigMap approach.
+
+Instead, Terraform creates:
+
+- an EKS access entry for `arn:aws:iam::409415529879:user/cli`
+- an EKS cluster-admin policy association for that principal
+
+Then local access is established with:
+
+- `aws eks update-kubeconfig --region us-east-2 --name showingflow-eks`
+
+That writes the cluster context into the local kubeconfig so normal `kubectl` commands work.
+
+This matters because it proves the cluster is not just present in AWS. It is actually manageable from the local development machine.
+
+## What Is Running In Kubernetes
+
+The current Kubernetes manifest is intentionally simple and lives in `infra/k8s/showingflow-stack.yaml`.
+
+It creates:
+
+- a `showingflow` namespace
+- a PostgreSQL `Deployment`
+- a PostgreSQL `ClusterIP` service
+- a `showingflow-api` `Deployment`
+- a `showingflow-api` `LoadBalancer` service
+
+The API container uses the same environment-driven Spring datasource model as the rest of the project:
+
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+
+In Kubernetes, those point the API at the in-cluster Postgres service:
+
+- `jdbc:postgresql://postgres.showingflow.svc.cluster.local:5432/showingflow`
+
+That is a useful checkpoint because it proves the same application artifact can run:
+
+- on the host
+- in Docker Compose
+- in GitHub Actions image builds
+- in EKS
+
+## Public Endpoint And Load Balancing
+
+The API is currently exposed with a Kubernetes service of type `LoadBalancer`.
+
+In EKS, that causes AWS to provision a public load balancer and route HTTP traffic to the API pod on port `8080`.
+
+This has already been verified in two ways:
+
+- `/actuator/health` returned `200`
+- a real `POST /brokerages` request through the public load balancer succeeded and returned a persisted brokerage record
+
+That is an important distinction. The public endpoint is not just alive at the infrastructure level. It has been proven to serve application traffic end to end.
+
 ## What Terraform Is Doing Today
 
 Terraform currently manages the first AWS slices:
@@ -273,6 +358,8 @@ Terraform currently manages the first AWS slices:
 - the ECR repository
 - the GitHub OIDC provider
 - the IAM role used by GitHub Actions for ECR push
+- the EKS cluster, node group, and supporting network/IAM resources
+- billing guardrails through budget and anomaly detection resources
 
 That means Terraform is already part of the system, not a future idea.
 
@@ -295,7 +382,9 @@ The main infra backend uses:
 
 That is a meaningful improvement because the main infrastructure state is no longer local-only.
 
-However, Terraform is still not fully production-shaped yet.
+Terraform is no longer just image-registry infrastructure. It now manages a real running compute environment.
+
+However, the EKS setup is intentionally not production-grade yet.
 
 That means:
 
@@ -303,9 +392,11 @@ That means:
 - the Terraform CI workflow is now verified in GitHub for `fmt`, `validate`, and `plan`
 - plan visibility is still limited because the current plan job only runs on `push` to `main`
 - apply is now manual-only by policy, but stronger guardrails do not exist yet
-- EKS would still add too much complexity if Terraform process discipline does not improve further
+- the cluster currently uses public subnets only
+- the control plane currently allows public access from `0.0.0.0/0`
+- the node group is intentionally minimal and not highly available
 
-This is why Terraform maturity is now the right next initiative.
+That Terraform maturity work is what made the first EKS slice reasonable.
 
 The next layer of maturity has now started as well:
 
@@ -361,26 +452,26 @@ Those alerts go to:
 
 One nuance: AWS automatically created a default anomaly monitor and subscription when Cost Explorer was enabled. Those default resources were deleted in the console so that the Terraform-managed monitor could become the single source of truth.
 
-## Why Terraform Maturity Comes Before EKS
+## Why This EKS Shape Is Only A First Slice
 
-It is tempting to go straight from ECR to Kubernetes, but that would be backward.
+The cluster is real and useful, but several shortcuts were taken to keep the first slice small and affordable.
 
-Before EKS work grows, Terraform should become more production-ready:
+Important current limitations:
 
-- remote backend for shared durable state
-- CI checks such as `fmt`, `validate`, and `plan`
-- a deliberate policy for when `terraform apply` is allowed
-- basic billing safeguards so cost surprises are caught early
+- worker nodes are in public subnets
+- there is no NAT/private-subnet topology
+- the Kubernetes service is a direct public `LoadBalancer`
+- PostgreSQL runs inside the cluster as a single pod
+- PostgreSQL storage is `emptyDir`, so it is ephemeral
+- the API deployment currently uses the `latest` image tag rather than an immutable release reference
 
-Why that matters:
+Those are acceptable choices for a first proving step. They are not the final target architecture.
 
-- infrastructure changes should have the same discipline as application builds
-- shared state becomes the source of truth instead of one laptop
-- infra plans become reviewable
-- risky automation can be gated properly before the AWS footprint gets larger
-- EKS introduces a more expensive cost surface than the current ECR-focused setup, so budgets and anomaly alerts should exist before cluster work begins
+This is how the system should be understood right now:
 
-This is the right “next layer of seriousness” for the project.
+- the Kubernetes path is proven
+- the cost-conscious starter shape is deliberate
+- the next work is hardening and durability, not proving that EKS can run the app at all
 
 ## What Is Still Missing
 
@@ -391,10 +482,9 @@ Still missing:
 - more domain slices such as listings, users, and showing slots
 - worker service behavior
 - frontend implementation
-- a deliberate Terraform apply policy
-- billing guardrails for the AWS account before EKS
-- Kubernetes deployment artifacts
-- EKS infrastructure
+- a hardened EKS network topology
+- a durable database strategy for cloud runtime
+- Helm packaging or a cleaner deployment packaging story
 - broader observability
 - security and authorization design beyond the current CI trust path
 
@@ -411,6 +501,9 @@ ShowingFlow is now a real backend foundation with:
 - containerized runtime
 - cloud image registry
 - CI-based image publishing to AWS
+- a live EKS cluster
+- local `kubectl` access
+- a publicly reachable API endpoint running in Kubernetes
 
 That is a very solid base.
 

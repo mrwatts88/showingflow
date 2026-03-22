@@ -24,6 +24,11 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Applied a monthly AWS Budget for billing alerts.
 - Enabled Cost Explorer, removed the AWS-created default anomaly resources, and applied the Terraform-managed anomaly monitor and anomaly subscription successfully.
 - Defined the Terraform apply policy as manual-only for the current phase of the project.
+- Added a first EKS Terraform slice with VPC, public subnets, cluster, node group, and local access entry.
+- Applied the EKS infrastructure successfully in AWS.
+- Added a Kubernetes manifest for in-cluster PostgreSQL and the API service.
+- Verified local `kubectl` access to the cluster.
+- Verified the public API endpoint through the AWS load balancer with a real `POST /brokerages` request.
 
 ## Current Verified State
 
@@ -79,21 +84,39 @@ This file is the live handoff for the next session. It should be updated wheneve
   - monitor `showingflow-service-anomaly-monitor`
   - subscription `showingflow-daily-anomaly-email`
   - anomaly threshold `>= $5` absolute impact
+- A live EKS cluster now exists:
+  - cluster `showingflow-eks`
+  - node group `showingflow-general`
+  - desired worker count `1`
+- Local `kubectl` access works through:
+  - `aws eks update-kubeconfig --region us-east-2 --name showingflow-eks`
+- The current Kubernetes workload exists in `infra/k8s/showingflow-stack.yaml`.
+- The cluster currently runs:
+  - one PostgreSQL pod exposed internally as `postgres`
+  - one API pod exposed publicly as `showingflow-api`
+- The public `LoadBalancer` service has been verified end to end:
+  - `/actuator/health` returned `200`
+  - `POST /brokerages` returned a created brokerage payload
+- `terraform -chdir=infra plan` now returns `No changes` after the EKS apply.
 
 ## Recommended Next Tasks
 
-1. Decide whether the bootstrap state bucket config should remain a separate local-state bootstrap layer or evolve into a longer-term pattern.
-2. Decide what the first EKS-facing Terraform slice should be.
-3. Revisit CI-driven Terraform apply only after environment protections and approval gates exist.
+1. Decide whether to keep the current public-only EKS network shape or harden it with private worker subnets and tighter control-plane access.
+2. Replace the in-cluster ephemeral PostgreSQL setup with a more durable database strategy.
+3. Stop deploying the API with the floating `latest` tag and move the Kubernetes workload toward an explicit image versioning approach.
 
 ## Risks And Gaps
 
 - There is still only one implemented domain slice.
-- CI now includes a proven ECR publish path, but deployment beyond image publishing does not exist yet.
-- The new `latest` tag behavior has not yet been re-verified in GitHub from this session.
+- The cluster is intentionally cheap rather than production-grade:
+  - worker nodes are in public subnets
+  - the control plane currently allows public access from `0.0.0.0/0`
+  - there is only one worker node
+- PostgreSQL is currently running inside the cluster with `emptyDir` storage, so it is not durable.
+- The Kubernetes deployment currently uses the floating `latest` image tag.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
 - Terraform apply is intentionally manual-only, so infrastructure changes still depend on local operator discipline.
-- EKS work would still be premature until Terraform checks and apply policy are stronger.
+- EKS now exists, but hardening and durability work still need to happen before calling the cluster production-ready.
 
 ## Resume Commands
 
@@ -150,11 +173,36 @@ Migrate the main infra state into the S3 backend:
 terraform init -migrate-state -force-copy
 ```
 
-Preview and apply the ECR repository:
+Preview and apply the main infrastructure:
 
 ```bash
 terraform plan
 terraform apply
+```
+
+Configure local access to EKS:
+
+```bash
+aws eks update-kubeconfig --region us-east-2 --name showingflow-eks
+kubectl get nodes -o wide
+```
+
+Apply the Kubernetes workload:
+
+```bash
+kubectl apply -f infra/k8s/showingflow-stack.yaml
+kubectl get pods -n showingflow -o wide
+kubectl get svc -n showingflow -o wide
+```
+
+Check the current public endpoint:
+
+```bash
+LB_HOST=$(kubectl get svc showingflow-api -n showingflow -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+curl "http://${LB_HOST}/actuator/health"
+curl -X POST "http://${LB_HOST}/brokerages" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Compass"}'
 ```
 
 Manual ECR push flow:
@@ -202,14 +250,24 @@ Terraform CI workflow:
 - `terraform -chdir=infra apply -auto-approve` created the budget successfully.
 - After Cost Explorer was enabled, Terraform still could not create the service monitor until the AWS-created default anomaly monitor and subscription were deleted from the console.
 - A final `terraform -chdir=infra apply -auto-approve` created the Terraform-managed anomaly monitor and subscription successfully.
+- `terraform -chdir=infra validate` succeeded for the EKS changes.
+- `terraform -chdir=infra apply -auto-approve` created the VPC, IAM, EKS cluster, node group, and access entry successfully.
+- `terraform -chdir=infra plan` returned `No changes` after the EKS apply.
+- `aws eks update-kubeconfig --region us-east-2 --name showingflow-eks` succeeded.
+- `kubectl get nodes -o wide` showed one Ready worker node.
+- `kubectl apply -f infra/k8s/showingflow-stack.yaml` created the namespace, Postgres service/deployment, API deployment, and `LoadBalancer` service.
+- `kubectl logs deployment/showingflow-api -n showingflow --tail=200` showed successful Spring startup and Flyway migration execution against in-cluster PostgreSQL.
+- The public load balancer endpoint returned `200` from `/actuator/health`.
+- A real `POST /brokerages` request through the public load balancer returned a created brokerage payload.
 
 ## Next Initiative
 
-The next initiative is not Kubernetes first.
+The next initiative is to improve the quality of the running EKS slice without losing the small working system.
 
-The next initiative is to finish making Terraform production-shaped:
+The most valuable follow-through now is:
 
-- keep billing safeguards in place as EKS increases the AWS cost surface
-- keep the manual apply policy disciplined until stronger deployment guardrails exist
+- harden the network shape
+- move the database to a more durable setup
+- stop relying on the floating `latest` tag in Kubernetes
 
-The backend piece, the basic billing guardrails, and the current apply policy are now in place for the main infra config. The next priority is deciding the first EKS-facing slice without weakening the current Terraform discipline.
+The important shift is that EKS is no longer hypothetical. The cluster and public service already work. The next work is refinement and hardening.

@@ -8,6 +8,7 @@ This file tracks the CLI commands that are valid for the project in its current 
 - Docker Desktop or a compatible Docker engine
 - AWS CLI for AWS access
 - Terraform for infrastructure provisioning
+- kubectl for local Kubernetes access
 - GitHub Actions for CI workflows
 
 ## Full Stack In Docker Compose
@@ -255,6 +256,68 @@ Current apply policy:
 - apply only after reviewing a fresh `terraform plan`
 - apply only after the latest Terraform CI run on `main` is green
 - if the infra change is significant, verify billing guardrails before applying
+
+## Amazon EKS
+
+Apply the current EKS infrastructure from the main Terraform root:
+
+```bash
+terraform -chdir=infra plan
+terraform -chdir=infra apply
+```
+
+Write the cluster context into local kubeconfig:
+
+```bash
+aws eks update-kubeconfig --region us-east-2 --name showingflow-eks
+```
+
+Check local access to the cluster:
+
+```bash
+kubectl get nodes -o wide
+```
+
+Apply the current Kubernetes workload:
+
+```bash
+kubectl apply -f infra/k8s/showingflow-stack.yaml
+```
+
+Check the workload:
+
+```bash
+kubectl get pods -n showingflow -o wide
+kubectl get svc -n showingflow -o wide
+```
+
+Stream API logs:
+
+```bash
+kubectl logs deployment/showingflow-api -n showingflow -f
+```
+
+Get the current public load balancer hostname:
+
+```bash
+kubectl get svc showingflow-api -n showingflow -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+```
+
+Hit the public health endpoint:
+
+```bash
+LB_HOST=$(kubectl get svc showingflow-api -n showingflow -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+curl "http://${LB_HOST}/actuator/health"
+```
+
+Create a brokerage through the public EKS endpoint:
+
+```bash
+LB_HOST=$(kubectl get svc showingflow-api -n showingflow -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+curl -X POST "http://${LB_HOST}/brokerages" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Compass"}'
+```
 
 ## Amazon ECR
 

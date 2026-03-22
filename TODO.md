@@ -2,7 +2,7 @@
 
 This file tracks unfinished work for the current checkpoint only.
 
-Current checkpoint: define Terraform apply policy and add billing safeguards before EKS work.
+Current checkpoint: define Terraform apply policy now that billing safeguards are in place before EKS work.
 
 ## Apply Policy
 
@@ -12,10 +12,9 @@ Current checkpoint: define Terraform apply policy and add billing safeguards bef
 
 ## Billing Guardrails
 
-- Add at least one monthly AWS Budget with alert thresholds.
-- Add a forecasted budget alert so spend is flagged before the monthly limit is crossed.
-- Add AWS Cost Anomaly Detection alerts for unusual spend.
-- Document the chosen billing guardrails once they exist.
+- Verify the live monthly AWS Budget in the console.
+- Verify the live anomaly monitor and daily anomaly email subscription in the console.
+- Revisit thresholds later if the `$25` budget or `$5` anomaly threshold prove too noisy or too weak.
 
 ## Backend Follow-Through
 

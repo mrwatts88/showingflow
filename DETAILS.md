@@ -316,6 +316,26 @@ The next layer of maturity has now started as well:
 
 This is the right sequence. First get shared state. Then get CI visibility and safety checks. Only after that consider stronger automation such as CI-driven apply.
 
+## Billing Guardrails
+
+The billing guardrails are now live in the Terraform root.
+
+What is live now:
+
+- a monthly AWS Budget named `showingflow-monthly-cost`
+- budget amount set to `$25`
+- an actual spend email alert at `80%`
+- a forecasted spend email alert at `100%`
+- a Cost Anomaly Detection monitor named `showingflow-service-anomaly-monitor`
+- a daily anomaly email subscription named `showingflow-daily-anomaly-email`
+- anomaly alerts configured for absolute anomaly impact `>= $5`
+
+Those alerts go to:
+
+- `mattryanwatts@gmail.com`
+
+One nuance: AWS automatically created a default anomaly monitor and subscription when Cost Explorer was enabled. Those default resources were deleted in the console so that the Terraform-managed monitor could become the single source of truth.
+
 ## Why Terraform Maturity Comes Before EKS
 
 It is tempting to go straight from ECR to Kubernetes, but that would be backward.

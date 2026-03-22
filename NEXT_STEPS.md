@@ -21,6 +21,8 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Added a dedicated Terraform GitHub Actions workflow and Terraform CI IAM role for `fmt`, `validate`, and `plan`.
 - Fixed the Terraform CI role policy after the first workflow run exposed missing refresh permissions for ECR tag reads and IAM attached-policy listing.
 - Verified in GitHub that the Terraform CI workflow now succeeds for `fmt`, `validate`, and `plan`.
+- Applied a monthly AWS Budget for billing alerts.
+- Enabled Cost Explorer, removed the AWS-created default anomaly resources, and applied the Terraform-managed anomaly monitor and anomaly subscription successfully.
 
 ## Current Verified State
 
@@ -67,12 +69,21 @@ This file is the live handoff for the next session. It should be updated wheneve
   - tag the image with the short commit SHA and `latest`
   - push both tags to ECR on `push` to `main`
 - That CI publish path has been observed working end to end in GitHub Actions.
+- The account now has a live AWS Budget:
+  - `showingflow-monthly-cost`
+  - `$25` monthly limit
+  - `80%` actual email alert
+  - `100%` forecasted email alert
+- The account now also has live Terraform-managed Cost Anomaly Detection resources:
+  - monitor `showingflow-service-anomaly-monitor`
+  - subscription `showingflow-daily-anomaly-email`
+  - anomaly threshold `>= $5` absolute impact
 
 ## Recommended Next Tasks
 
 1. Decide the policy for Terraform `apply`: manual only for now, or gated CI apply after plan flows are stable.
-2. Add billing safeguards before EKS work, starting with budgets and anomaly alerts.
-3. Decide whether the bootstrap state bucket config should remain a separate local-state bootstrap layer or evolve into a longer-term pattern.
+2. Decide whether the bootstrap state bucket config should remain a separate local-state bootstrap layer or evolve into a longer-term pattern.
+3. Decide what the first EKS-facing Terraform slice should be after apply policy is settled.
 
 ## Risks And Gaps
 
@@ -80,7 +91,6 @@ This file is the live handoff for the next session. It should be updated wheneve
 - CI now includes a proven ECR publish path, but deployment beyond image publishing does not exist yet.
 - The new `latest` tag behavior has not yet been re-verified in GitHub from this session.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
-- Billing safeguards are not yet in place for the AWS account.
 - EKS work would still be premature until Terraform checks and apply policy are stronger.
 
 ## Resume Commands
@@ -185,6 +195,11 @@ Terraform CI workflow:
 - The Terraform CI workflow was added in code and the Terraform CI IAM role was applied in AWS.
 - The first GitHub run exposed missing read permissions for Terraform refresh, and the plan role policy was updated in AWS to add `ecr:ListTagsForResource` and `iam:ListAttachedRolePolicies`.
 - The Terraform workflow rerun was observed succeeding in GitHub for `fmt`, `validate`, and `plan`.
+- `terraform -chdir=infra validate` succeeded for the billing-guardrail changes.
+- `terraform -chdir=infra plan` showed three new billing resources: one budget, one anomaly monitor, and one anomaly subscription.
+- `terraform -chdir=infra apply -auto-approve` created the budget successfully.
+- After Cost Explorer was enabled, Terraform still could not create the service monitor until the AWS-created default anomaly monitor and subscription were deleted from the console.
+- A final `terraform -chdir=infra apply -auto-approve` created the Terraform-managed anomaly monitor and subscription successfully.
 
 ## Next Initiative
 
@@ -193,6 +208,6 @@ The next initiative is not Kubernetes first.
 The next initiative is to finish making Terraform production-shaped:
 
 - define clear policy for when and how `terraform apply` is allowed
-- add billing safeguards before EKS increases the AWS cost surface
+- keep billing safeguards in place as EKS increases the AWS cost surface
 
-The backend piece is now in place for the main infra config. The next priority is setting apply policy and billing guardrails before substantial EKS work.
+The backend piece and the basic billing guardrails are now in place for the main infra config. The next priority is setting apply policy before substantial EKS work.

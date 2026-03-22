@@ -21,9 +21,12 @@ provider "aws" {
 }
 
 locals {
-  github_oidc_url    = "https://token.actions.githubusercontent.com"
-  github_repository  = "mrwatts88/showingflow"
-  github_main_branch = "repo:mrwatts88/showingflow:ref:refs/heads/main"
+  github_oidc_url                  = "https://token.actions.githubusercontent.com"
+  github_repository                = "mrwatts88/showingflow"
+  github_main_branch               = "repo:mrwatts88/showingflow:ref:refs/heads/main"
+  billing_alert_email              = "mattryanwatts@gmail.com"
+  monthly_billing_budget_amount    = "25"
+  anomaly_alert_absolute_threshold = "5"
 }
 
 data "tls_certificate" "github_actions" {
@@ -164,4 +167,53 @@ resource "aws_iam_role_policy" "github_actions_terraform_plan" {
   name   = "github-actions-showingflow-terraform-plan"
   role   = aws_iam_role.github_actions_terraform_plan.id
   policy = data.aws_iam_policy_document.github_actions_terraform_plan.json
+}
+
+resource "aws_budgets_budget" "monthly_cost" {
+  name         = "showingflow-monthly-cost"
+  budget_type  = "COST"
+  limit_amount = local.monthly_billing_budget_amount
+  limit_unit   = "USD"
+  time_unit    = "MONTHLY"
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    notification_type          = "ACTUAL"
+    threshold                  = 80
+    threshold_type             = "PERCENTAGE"
+    subscriber_email_addresses = [local.billing_alert_email]
+  }
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    notification_type          = "FORECASTED"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    subscriber_email_addresses = [local.billing_alert_email]
+  }
+}
+
+resource "aws_ce_anomaly_monitor" "services" {
+  name              = "showingflow-service-anomaly-monitor"
+  monitor_dimension = "SERVICE"
+  monitor_type      = "DIMENSIONAL"
+}
+
+resource "aws_ce_anomaly_subscription" "daily_email" {
+  name             = "showingflow-daily-anomaly-email"
+  frequency        = "DAILY"
+  monitor_arn_list = [aws_ce_anomaly_monitor.services.arn]
+
+  subscriber {
+    address = local.billing_alert_email
+    type    = "EMAIL"
+  }
+
+  threshold_expression {
+    dimension {
+      key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
+      match_options = ["GREATER_THAN_OR_EQUAL"]
+      values        = [local.anomaly_alert_absolute_threshold]
+    }
+  }
 }

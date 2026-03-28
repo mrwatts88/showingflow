@@ -31,6 +31,8 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Verified local `kubectl` access to the cluster.
 - Verified the public API endpoint through the AWS load balancer with a real `POST /brokerages` request.
 - Added a top-level `Makefile` with the current local dev, Terraform, EKS, Kubernetes, and verification commands.
+- Added teardown commands so the live EKS runtime can be removed between sessions to control cost.
+- Deleted the Kubernetes workload and destroyed the live EKS runtime while preserving ECR, CI auth, and billing resources.
 
 ## Current Verified State
 
@@ -86,20 +88,23 @@ This file is the live handoff for the next session. It should be updated wheneve
   - monitor `showingflow-service-anomaly-monitor`
   - subscription `showingflow-daily-anomaly-email`
   - anomaly threshold `>= $5` absolute impact
-- A live EKS cluster now exists:
+- A verified EKS cluster definition now exists:
   - cluster `showingflow-eks`
   - node group `showingflow-general`
   - desired worker count `1`
-- Local `kubectl` access works through:
-  - `aws eks update-kubeconfig --region us-east-2 --name showingflow-eks`
+  - this runtime is currently torn down to save cost, but it has been verified and can be recreated
 - The current Kubernetes workload exists in `infra/k8s/showingflow-stack.yaml`.
-- The cluster currently runs:
+- The verified workload shape is:
   - one PostgreSQL pod exposed internally as `postgres`
   - one API pod exposed publicly as `showingflow-api`
 - The public `LoadBalancer` service has been verified end to end:
   - `/actuator/health` returned `200`
   - `POST /brokerages` returned a created brokerage payload
-- `terraform -chdir=infra plan` now returns `No changes` after the EKS apply.
+- The low-cost baseline still left in AWS is:
+  - ECR
+  - CI IAM/OIDC resources
+  - Terraform remote backend
+  - billing alert resources
 - `make help` now lists the current top-level operator commands.
 
 ## Recommended Next Tasks
@@ -112,6 +117,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 ## Risks And Gaps
 
 - There is still only one implemented domain slice.
+- The live EKS runtime is currently off, so the next session will need to recreate it before doing another in-cluster walkthrough or runtime change.
 - The cluster is intentionally cheap rather than production-grade:
   - worker nodes are in public subnets
   - the control plane currently allows public access from `0.0.0.0/0`
@@ -188,6 +194,7 @@ terraform apply
 Configure local access to EKS:
 
 ```bash
+make tf-apply
 aws eks update-kubeconfig --region us-east-2 --name showingflow-eks
 kubectl get nodes -o wide
 ```
@@ -208,6 +215,13 @@ curl "http://${LB_HOST}/actuator/health"
 curl -X POST "http://${LB_HOST}/brokerages" \
   -H "Content-Type: application/json" \
   -d '{"name":"Compass"}'
+```
+
+Tear the live runtime back down after the session:
+
+```bash
+make k8s-delete
+make tf-destroy-eks
 ```
 
 Manual ECR push flow:
@@ -265,6 +279,8 @@ Terraform CI workflow:
 - `kubectl logs deployment/showingflow-api -n showingflow --tail=200` showed successful Spring startup and Flyway migration execution against in-cluster PostgreSQL.
 - The public load balancer endpoint returned `200` from `/actuator/health`.
 - A real `POST /brokerages` request through the public load balancer returned a created brokerage payload.
+- `kubectl delete -f infra/k8s/showingflow-stack.yaml --ignore-not-found` removed the live workload before teardown.
+- `terraform -chdir=infra destroy ...targets...` removed the live EKS cluster, node group, network, and related IAM resources while preserving ECR, CI auth, and billing resources.
 
 ## Next Initiative
 
@@ -277,4 +293,4 @@ The most valuable follow-through now is:
 - then improve deployment discipline before spending more on infrastructure:
   pin image versions, package manifests more cleanly, and separate runtime config from the raw manifest
 
-The important shift is that EKS is no longer hypothetical. The cluster and public service already work. The next session should focus first on operability and understanding, then on low-cost deployment hardening rather than expensive network redesign.
+The important shift is that EKS is no longer hypothetical. The cluster and public service already worked, and the runtime can now be brought up only when needed. The next session should focus first on operability and understanding, then on low-cost deployment hardening rather than expensive network redesign.

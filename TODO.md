@@ -7,6 +7,7 @@ Current checkpoint: use the new top-level `Makefile` and a deeper EKS review to 
 ## Makefile Follow-Through
 
 - Use the new top-level `Makefile` as the default operator surface.
+- Use the teardown targets when the cluster does not need to stay live between sessions.
 - Refine target names or add missing targets if the next EKS/Kubernetes review exposes gaps.
 - Keep the targets grounded in commands that already work in this repo.
 

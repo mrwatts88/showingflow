@@ -18,6 +18,7 @@ Examples:
 make local-up-build
 make api-test
 make tf-plan
+make tf-destroy-eks
 make eks-kubeconfig
 make k8s-health
 ```
@@ -284,6 +285,13 @@ Apply the current EKS infrastructure from the main Terraform root:
 ```bash
 terraform -chdir=infra plan
 terraform -chdir=infra apply
+```
+
+Destroy only the live EKS runtime while preserving ECR, CI auth, and billing resources:
+
+```bash
+make k8s-delete
+make tf-destroy-eks
 ```
 
 Write the cluster context into local kubeconfig:

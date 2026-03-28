@@ -292,7 +292,7 @@ That same pattern is now used for two separate CI concerns:
 
 ## What EKS Is Doing Today
 
-The project now has its first live Kubernetes runtime in AWS.
+The project now has its first verified Kubernetes runtime in AWS.
 
 Terraform currently creates:
 
@@ -311,6 +311,8 @@ The current cluster is intentionally small:
 - worker instance type: `t3.small`
 
 This was a deliberate tradeoff. The goal was to prove the end-to-end Kubernetes path with the smallest practical AWS footprint, not to jump straight to a hardened production topology.
+
+One more practical decision has now been made: the live EKS runtime does not need to stay up all the time. Because this is a side project and EKS has a real steady cost, the cluster can be torn down between sessions and recreated from Terraform when needed.
 
 ## How Local kubectl Access Works
 
@@ -370,6 +372,8 @@ This has already been verified in two ways:
 - a real `POST /brokerages` request through the public load balancer succeeded and returned a persisted brokerage record
 
 That is an important distinction. The public endpoint is not just alive at the infrastructure level. It has been proven to serve application traffic end to end.
+
+That does not mean the cluster must stay live continuously. In this project, “verified and reproducible” is more important than “always running.”
 
 ## What Terraform Is Doing Today
 

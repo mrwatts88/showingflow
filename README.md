@@ -169,13 +169,14 @@ The project now has the first pieces of a real deployment path:
 - billing guardrails now exist in AWS through Terraform-managed budget and anomaly alert resources
 - Terraform `apply` remains manual-only for now
 - a top-level `Makefile` now exists for the common local dev, infrastructure, EKS, and verification commands
-- a minimal Amazon EKS cluster now exists in `us-east-2`
-- the cluster has one managed node group with one worker node
+- a minimal Amazon EKS cluster has been created and verified in `us-east-2`
+- the verified cluster shape uses one managed node group with one worker node
 - local `kubectl` access is configured through `aws eks update-kubeconfig`
 - Kubernetes manifests now exist under `infra/k8s`
-- the API and a demo PostgreSQL instance are now running in the cluster
-- the API is exposed through a Kubernetes `LoadBalancer` service
+- the API and a demo PostgreSQL instance have been verified running in the cluster
+- the API has been verified behind a Kubernetes `LoadBalancer` service
 - the public load balancer endpoint has been verified with a real `POST /brokerages` request
+- the live EKS runtime has currently been torn down to avoid unnecessary AWS cost between sessions
 
 What does not exist yet:
 

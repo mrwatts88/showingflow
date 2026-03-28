@@ -23,9 +23,11 @@
 	tf-bootstrap-apply \
 	tf-plan \
 	tf-apply \
+	tf-destroy-eks \
 	eks-kubeconfig \
 	eks-nodes \
 	k8s-apply \
+	k8s-delete \
 	k8s-pods \
 	k8s-services \
 	k8s-api-logs \
@@ -102,6 +104,24 @@ tf-plan: ## Run Terraform plan for the main infrastructure
 tf-apply: ## Apply the main Terraform root
 	terraform -chdir=infra apply
 
+tf-destroy-eks: ## Destroy only the live EKS runtime slice while preserving ECR, CI auth, and billing resources
+	terraform -chdir=infra destroy -auto-approve \
+		-target=aws_eks_access_policy_association.local_admin \
+		-target=aws_eks_access_entry.local_admin \
+		-target=aws_eks_node_group.main \
+		-target=aws_eks_cluster.main \
+		-target=aws_iam_role_policy_attachment.eks_node_worker \
+		-target=aws_iam_role_policy_attachment.eks_node_ecr \
+		-target=aws_iam_role_policy_attachment.eks_node_cni \
+		-target=aws_iam_role_policy_attachment.eks_cluster_policy \
+		-target=aws_iam_role.eks_node \
+		-target=aws_iam_role.eks_cluster \
+		-target=aws_route_table_association.eks_public \
+		-target=aws_route_table.eks_public \
+		-target=aws_subnet.eks_public \
+		-target=aws_internet_gateway.eks \
+		-target=aws_vpc.eks
+
 eks-kubeconfig: ## Write the EKS cluster context into local kubeconfig
 	aws eks update-kubeconfig --region us-east-2 --name showingflow-eks
 
@@ -110,6 +130,9 @@ eks-nodes: ## Show EKS nodes
 
 k8s-apply: ## Apply the current Kubernetes workload
 	kubectl apply -f infra/k8s/showingflow-stack.yaml
+
+k8s-delete: ## Delete the current Kubernetes workload
+	kubectl delete -f infra/k8s/showingflow-stack.yaml --ignore-not-found
 
 k8s-pods: ## Show Kubernetes pods in the showingflow namespace
 	kubectl get pods -n showingflow -o wide

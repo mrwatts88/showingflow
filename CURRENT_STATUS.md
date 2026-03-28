@@ -33,11 +33,12 @@ This is not yet a scalable system in the operational sense, but the project has 
 - A monthly AWS Budget now exists for the account.
 - A Terraform-managed Cost Anomaly Detection monitor and daily anomaly email subscription now exist for the account.
 - Terraform apply policy is now defined as manual-only for the current stage of the project.
-- A minimal EKS runtime now exists in AWS.
+- A minimal EKS runtime has been created and verified in AWS.
 - Terraform now manages a VPC, subnets, IAM roles, an EKS cluster, a managed node group, and local cluster access.
-- The cluster currently has one worker node and is reachable from local `kubectl`.
-- A Kubernetes manifest now runs PostgreSQL plus the API in the cluster.
-- The API is exposed through a public Kubernetes `LoadBalancer` service.
+- The EKS slice has been verified end to end and can be recreated from Terraform.
+- The live cluster has currently been torn down between sessions to reduce AWS cost.
+- A Kubernetes manifest exists for PostgreSQL plus the API in the cluster.
+- The API has previously been verified through a public Kubernetes `LoadBalancer` service.
 - The public endpoint has been verified with a real brokerage create request.
 
 ### Main API Service
@@ -90,6 +91,8 @@ This is enough to prove:
 - the EKS worker can pull the API image from ECR
 - the API can talk to PostgreSQL inside the cluster
 - the public load balancer can serve a real API request
+
+That runtime is not left up continuously. To control cost, the live EKS slice may be torn down between sessions and recreated when needed.
 
 ### Database and Schema Management
 
@@ -192,6 +195,7 @@ The important thing is not that there is a lot of code; it is that the existing 
 - the main Terraform state is no longer local-only, which is the right prerequisite for stronger infrastructure discipline
 - the next layer of Terraform discipline now exists through CI formatting, validation, and planning workflow logic
 - the first EKS-facing slice is now proven end to end
-- the immediate next checkpoint is to harden that cluster shape without losing the working public runtime
+- the live EKS runtime can be intentionally torn down and recreated to control cost
+- the immediate next checkpoint is to improve deployment discipline before paying for more hardening
 
 The next major step should keep moving outward from application code and toward delivery and operations, but the priority is no longer “can EKS work at all.” The priority is improving the quality of the running Kubernetes shape in the cheapest highest-value order: better image pinning, cleaner deployment packaging, and better runtime configuration before taking on more expensive network and database hardening.

@@ -146,6 +146,26 @@ That proves much more than a toy unit test:
 
 This is one of the strongest engineering choices in the project so far.
 
+## Makefile And Operator Commands
+
+The repository now has a top-level `Makefile`.
+
+This does not replace the underlying commands. It collects the commands that already work and gives them one obvious operator entry point.
+
+That matters because a growing system becomes harder to operate if every workflow has to be reconstructed from docs each session.
+
+The current `Makefile` groups the real commands for:
+
+- local Docker Compose runtime
+- host-run API development
+- API tests and jar builds
+- Terraform init, plan, and apply
+- EKS kubeconfig and node access
+- Kubernetes workload apply and inspection
+- public endpoint verification
+
+This is the right kind of convenience layer. It reduces friction without hiding the actual tools underneath.
+
 ## Runtime Modes
 
 The system currently supports two useful local runtime modes.
@@ -472,6 +492,16 @@ This is how the system should be understood right now:
 - the Kubernetes path is proven
 - the cost-conscious starter shape is deliberate
 - the next work is hardening and durability, not proving that EKS can run the app at all
+
+For this project, the most sensible hardening order is not “most infrastructure first.”
+
+The better next steps are the cheaper, higher-signal ones:
+
+- stop deploying `latest`
+- improve manifest and deployment packaging
+- separate runtime configuration more cleanly
+
+That work improves operational discipline without immediately increasing AWS cost through NAT, private-subnet redesign, or managed database infrastructure.
 
 ## What Is Still Missing
 

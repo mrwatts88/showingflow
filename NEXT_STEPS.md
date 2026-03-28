@@ -30,6 +30,7 @@ This file is the live handoff for the next session. It should be updated wheneve
 - Added a Kubernetes manifest for in-cluster PostgreSQL and the API service.
 - Verified local `kubectl` access to the cluster.
 - Verified the public API endpoint through the AWS load balancer with a real `POST /brokerages` request.
+- Added a top-level `Makefile` with the current local dev, Terraform, EKS, Kubernetes, and verification commands.
 
 ## Current Verified State
 
@@ -99,12 +100,14 @@ This file is the live handoff for the next session. It should be updated wheneve
   - `/actuator/health` returned `200`
   - `POST /brokerages` returned a created brokerage payload
 - `terraform -chdir=infra plan` now returns `No changes` after the EKS apply.
+- `make help` now lists the current top-level operator commands.
 
 ## Recommended Next Tasks
 
-1. Create a top-level `Makefile` that gathers the real day-to-day commands for local development, infrastructure, Kubernetes, and verification into one operator entry point.
-2. Review the current EKS and Kubernetes setup in detail and document the important moving parts so the system can be explained and reasoned about at a senior level.
-3. Only after that review, decide which hardening change should come first: network shape, database durability, or image pinning.
+1. Review the current EKS and Kubernetes setup in detail and document the important moving parts so the system can be explained and reasoned about at a senior level.
+2. Use the new `Makefile` as the main path for that walkthrough and refine any missing or awkward targets that show up during the review.
+3. After that review, focus next on low-cost deployment hardening:
+   move away from the floating `latest` image tag, improve manifest/config packaging, and separate runtime configuration more cleanly before taking on expensive infrastructure hardening.
 
 ## Risks And Gaps
 
@@ -115,6 +118,7 @@ This file is the live handoff for the next session. It should be updated wheneve
   - there is only one worker node
 - PostgreSQL is currently running inside the cluster with `emptyDir` storage, so it is not durable.
 - The Kubernetes deployment currently uses the floating `latest` image tag.
+- Full network hardening would increase AWS cost quickly, so it is probably not the right immediate next move for this side project.
 - The worker service, frontend, infrastructure, and observability remain mostly planned rather than implemented.
 - Terraform apply is intentionally manual-only, so infrastructure changes still depend on local operator discipline.
 - EKS now exists, but hardening and durability work still need to happen before calling the cluster production-ready.
@@ -264,12 +268,13 @@ Terraform CI workflow:
 
 ## Next Initiative
 
-The next initiative is to make the current system easier to operate and better understood before changing its shape again.
+The next initiative is to understand the current EKS and Kubernetes setup deeply before changing its shape again.
 
 The most valuable follow-through now is:
 
-- add a top-level `Makefile` for the real operator and development commands
 - study the current EKS and Kubernetes setup until each piece is understood clearly at a senior level
-- then choose the next hardening step from a position of understanding rather than guesswork
+- use the new `Makefile` as the default operator surface while doing that review
+- then improve deployment discipline before spending more on infrastructure:
+  pin image versions, package manifests more cleanly, and separate runtime config from the raw manifest
 
-The important shift is that EKS is no longer hypothetical. The cluster and public service already work. The next session should focus first on operability and understanding, then on refinement and hardening.
+The important shift is that EKS is no longer hypothetical. The cluster and public service already work. The next session should focus first on operability and understanding, then on low-cost deployment hardening rather than expensive network redesign.

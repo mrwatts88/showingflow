@@ -2,6 +2,26 @@
 
 This file tracks the CLI commands that are valid for the project in its current state.
 
+## Preferred Entry Point
+
+The preferred top-level entry point is now the repository `Makefile`.
+
+Show the available targets:
+
+```bash
+make help
+```
+
+Examples:
+
+```bash
+make local-up-build
+make api-test
+make tf-plan
+make eks-kubeconfig
+make k8s-health
+```
+
 ## Prerequisites
 
 - Java 21 for local Gradle runs

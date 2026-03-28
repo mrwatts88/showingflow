@@ -13,6 +13,7 @@ This is not yet a scalable system in the operational sense, but the project has 
 - Monorepo structure is in place for backend services, frontend, infrastructure, and docs.
 - Root documentation defines the intended target architecture: Spring Boot API, worker service, frontend, AWS infrastructure, CI/CD, and observability.
 - Local PostgreSQL development is configured through Docker Compose.
+- A top-level `Makefile` now exists as the main operator entry point for common local, Terraform, EKS, and verification commands.
 - The local runtime now supports both:
   - host-run API with PostgreSQL in Docker
   - full API + PostgreSQL execution in Docker Compose
@@ -193,4 +194,4 @@ The important thing is not that there is a lot of code; it is that the existing 
 - the first EKS-facing slice is now proven end to end
 - the immediate next checkpoint is to harden that cluster shape without losing the working public runtime
 
-The next major step should keep moving outward from application code and toward delivery and operations, but the priority is no longer “can EKS work at all.” The priority is improving the quality of the running Kubernetes shape: network hardening, durable data, better image pinning, and a cleaner deployment model while keeping the current manual reviewed Terraform apply policy.
+The next major step should keep moving outward from application code and toward delivery and operations, but the priority is no longer “can EKS work at all.” The priority is improving the quality of the running Kubernetes shape in the cheapest highest-value order: better image pinning, cleaner deployment packaging, and better runtime configuration before taking on more expensive network and database hardening.

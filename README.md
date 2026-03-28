@@ -168,6 +168,7 @@ The project now has the first pieces of a real deployment path:
 - Terraform `fmt`, `validate`, and `plan` have now been verified in GitHub Actions
 - billing guardrails now exist in AWS through Terraform-managed budget and anomaly alert resources
 - Terraform `apply` remains manual-only for now
+- a top-level `Makefile` now exists for the common local dev, infrastructure, EKS, and verification commands
 - a minimal Amazon EKS cluster now exists in `us-east-2`
 - the cluster has one managed node group with one worker node
 - local `kubectl` access is configured through `aws eks update-kubeconfig`
